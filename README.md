@@ -1,8 +1,8 @@
-# WebGui
+# EnvyWebTrace
 
-WebGui is an example showing how to use the IMGUI user interface in a web browser.
+EnvyWebTrace is a web port of the wildly popular EnvyTrace software.
 
-See the [Live Demo](https://nvmsocool.github.io/WebGui/imgui.html) here.
+See the [Live Demo](https://nvmsocool.github.io/EnvyWebTrace/imgui.html) here.
 
 Screenshot:
 
