@@ -1,4 +1,5 @@
 #pragma once
+#include "libs/Eigen/Geometry"
 
 static const float pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062f;
 static const float pi_2 = pi * 2.f;
@@ -37,7 +38,7 @@ static float randf()
 
 // array of key codes
 #include <unordered_map>
-static std::unordered_map<char*, int> keyLookup{
+static std::unordered_map<const char*, int> keyLookup{
   { "Backspace", 0x08 },
   { "Tab", 0x09 },
   { "Clear", 0x0C },

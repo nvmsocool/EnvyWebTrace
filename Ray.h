@@ -1,4 +1,6 @@
 #pragma once
+#include "libs/Eigen/Geometry"
+
 class Ray
 {
 public:

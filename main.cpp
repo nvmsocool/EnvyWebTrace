@@ -5,6 +5,8 @@
 #endif
 
 #define GLFW_INCLUDE_ES3
+#include "libs/Eigen/StdVector"
+#include "libs/Eigen_unsupported/Eigen/BVH" // For KdBVH
 #include <GLES3/gl3.h>
 #include <GLFW/glfw3.h>
 
@@ -13,12 +15,13 @@
 #include "imgui_impl_opengl3.h"
 #include <iostream>
 #include <vector>
+#include <list>
 
 #include "Tracer.h"
 #include "Display.h"
 #include "BMP.h"
 #include "ImageData.h"
-#include "Shapes/Shape.h"
+#include "Shape.h"
 
 // Global variables - the window needs to be passed in to imgui
 GLFWwindow* g_window;
@@ -69,7 +72,7 @@ float min_ratio;
 //int numThreadsToUse = std::max(1, (int)processorCount - 1);
 
 void ResetTrace();
-void ResetFileName();
+void ResetFileName(){}
 void HandleGifFrame();
 
 void ResizePreview()
@@ -106,10 +109,10 @@ void SetupScene()
 
   tracer->ClearAll();
 
-  SaveCopy();
+  //SaveCopy();
 
   // Read the scene, calling scene.Command for each line.
-  ReadScene();
+  //ReadScene();
 
   tracer->Finit();
 
@@ -163,21 +166,21 @@ void DrawGUI()
     else
       isEnteringText = false;
 
-    if (ImGui::Button("load_scene"))
-    {
-      //reload scene
-      shouldReload = true;
-    }
-    if (ImGui::Button("save_scene"))
-    {
-      SaveCopy();
-      SaveScene(sceneName, tracer);
-    }
-    if (ImGui::Button("BMP snap"))
-    {
-      generateBitmapImage(image, bmpName.data());
-      SaveCopy();
-    }
+    // if (ImGui::Button("load_scene"))
+    // {
+    //   //reload scene
+    //   shouldReload = true;
+    // }
+    // if (ImGui::Button("save_scene"))
+    // {
+    //   SaveCopy();
+    //   SaveScene(sceneName, tracer);
+    // }
+    // if (ImGui::Button("BMP snap"))
+    // {
+    //   generateBitmapImage(image, bmpName.data());
+    //   SaveCopy();
+    // }
 
     ImGui::Unindent(16.0f);
   }
@@ -210,48 +213,8 @@ void DrawGUI()
     }
     if (ImGui::SliderInt("guiFPS", &maxFPS, 1, 120))
       ResetFPS();
-    ImGui::SliderInt("threads", &numThreadsToUse, 1, processorCount);
+    //ImGui::SliderInt("threads", &numThreadsToUse, 1, processorCount);
     ImGui::Checkbox("isPaused", &tracer->isPaused);
-    ImGui::Checkbox("gif_render", &wannaTraceGif);
-    if (wannaTraceGif)
-    {
-      if (isTracingGif)
-      {
-        ImGui::Text(("Trace: " + std::to_string(currentGifTrace)).data());
-        ImGui::Text(("Frame: " + std::to_string(currentGifFrame)).data());
-        if (ImGui::Button("Stop"))
-        {
-          isTracingGif = false;
-        }
-      }
-      else
-      {
-        if (ImGui::Button("Frame0"))
-        {
-          tracer->TakeSnapshot(0);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Frame1"))
-        {
-          tracer->TakeSnapshot(1);
-        }
-        ImGui::InputInt("num_gif_frames", &numGifFrames);
-        ImGui::InputInt("frame_delay", &gifDelay);
-        ImGui::InputInt("traces_per_frame", &tracesPerGifFrame);
-        if (ImGui::Button("Start"))
-        {
-          isTracingGif = true;
-          tracer->camera.controlsEnabled = false;
-          currentGifTrace = 0;
-          gifImages.resize(numGifFrames);
-          for (size_t i = 0; i < numGifFrames; i++)
-          {
-            gifImages[i].Clear();
-            gifImages[i].Resize(image.w, image.h);
-          }
-        }
-      }
-    }
 
     ImGui::Unindent(16.0f);
   }
@@ -478,7 +441,6 @@ int main(int argc, char** argv)
 
   tracer = new Tracer();
   display = new Display();
-  gif_writer = new GifWriter();
   
   SetupScene();
 

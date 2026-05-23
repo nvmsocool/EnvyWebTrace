@@ -1,5 +1,6 @@
 #include "Camera.h"
-#include <windows.h>
+#include "Utilities.h"
+//#include <windows.h>
 
 Camera::Camera()
 {
@@ -62,7 +63,8 @@ void Camera::UpdateFOV(float w, float h)
 
 bool IsKeyDown(char *key)
 {
-  return GetAsyncKeyState(keyLookup[key]);
+  return false;
+  //return GetAsyncKeyState(keyLookup[key]);
 }
 
 bool Camera::Update()

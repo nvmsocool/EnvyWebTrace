@@ -3,7 +3,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GLFW\glfw3.h>
+//#include <GLFW\glfw3.h>
+#include "Utilities.h"
 
 // needed for imgui compatability
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -44,8 +45,8 @@ void CloseFunc(GLFWwindow *window)
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  glfwDestroyWindow(globalDisplay->window);
-  glfwTerminate();
+  //glfwDestroyWindow(globalDisplay->window);
+  //glfwTerminate();
 }
 
 void ActiveFunc(GLFWwindow *window, int focused)
@@ -55,8 +56,8 @@ void ActiveFunc(GLFWwindow *window, int focused)
 
 void ClickFunc(GLFWwindow *window, int button, int action, int mods)
 {
-  if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
-    globalDisplay->clickRequest = true;
+  //if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
+  //  globalDisplay->clickRequest = true;
 }
 
 // class functions
@@ -67,46 +68,46 @@ void Display::DrawArray(ImageData &id)
   if (closed)
     return;
 
-  glEnable(GL_TEXTURE_2D);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)GL_LINEAR);
-
-  glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      (int)GL_RGB,
-      id.w,
-      id.h,
-      0,
-      GL_RGB,
-      GL_FLOAT,
-      &id.data[0][0]);
-
-  glBegin(GL_QUADS);
-  //lower left
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex2f(left, bottom);
-  //lower right
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex2f(right, bottom);
-  //upper right
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex2f(right, top);
-  //upper left
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex2f(left, top);
-
-  glEnd();
+  //glEnable(GL_TEXTURE_2D);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)GL_LINEAR);
+//
+  //glTexImage2D(
+  //    GL_TEXTURE_2D,
+  //    0,
+  //    (int)GL_RGB,
+  //    id.w,
+  //    id.h,
+  //    0,
+  //    GL_RGB,
+  //    GL_FLOAT,
+  //    &id.data[0][0]);
+//
+  //glBegin(GL_QUADS);
+  ////lower left
+  //glTexCoord2f(0.0f, 0.0f);
+  //glVertex2f(left, bottom);
+  ////lower right
+  //glTexCoord2f(1.0f, 0.0f);
+  //glVertex2f(right, bottom);
+  ////upper right
+  //glTexCoord2f(1.0f, 1.0f);
+  //glVertex2f(right, top);
+  ////upper left
+  //glTexCoord2f(0.0f, 1.0f);
+  //glVertex2f(left, top);
+//
+  //glEnd();
 }
 
 void Display::FinishDrawing()
 {
-  glFlush();
-  glfwSwapBuffers(window);
+  //glFlush();
+  //glfwSwapBuffers(window);
 }
 
 void Display::UpdateEvent()
 {
-  glfwPollEvents();
+  //glfwPollEvents();
 }
 
 void Display::SetRenderSize(ImageData &id)
@@ -121,18 +122,18 @@ void Display::ReshapeWindow(int w, int h)
 {
   // clear everything
   int display_w, display_h;
-  glfwGetFramebufferSize(window, &display_w, &display_h);
-  glViewport(0, 0, display_w, display_h);
-  glClearColor(0,0,0,0);
-  glClear(GL_COLOR_BUFFER_BIT);
+  //glfwGetFramebufferSize(window, &display_w, &display_h);
+  //glViewport(0, 0, display_w, display_h);
+  //glClearColor(0,0,0,0);
+  //glClear(GL_COLOR_BUFFER_BIT);
 
-  glfwSwapBuffers(window);
+  //glfwSwapBuffers(window);
 
   //reset view
   window_width = w;
   window_height = h;
-  if (w && h)
-    glViewport(0, 0, w, h);
+  //if (w && h)
+  //  glViewport(0, 0, w, h);
 
   CalcImageViewport();
 }
@@ -185,26 +186,26 @@ void Display::SetupWindow(int _w, int h)
   globalDisplay = this;
 
   // Setup window
-  glfwSetErrorCallback(glfw_error_callback);
-  if (!glfwInit())
-    return;
+  //glfwSetErrorCallback(glfw_error_callback);
+  //if (!glfwInit())
+  //  return;
 
   const char *glsl_version = "#version 130";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
   // Create window with graphics context
-  window = glfwCreateWindow(w, h, "EnvyTrace", NULL, NULL);
-  if (window == NULL)
-    return;
-  glfwMakeContextCurrent(window);
-  glfwSwapInterval(1); // Enable vsync
+  //window = glfwCreateWindow(w, h, "EnvyTrace", NULL, NULL);
+  //if (window == NULL)
+  //  return;
+  //glfwMakeContextCurrent(window);
+  //glfwSwapInterval(1); // Enable vsync
 
-  glfwSetWindowFocusCallback(window, ActiveFunc);
-  glfwSetWindowSizeCallback(window, ReshapeFunc);
-  glfwSetWindowCloseCallback(window, CloseFunc);
-  glfwSetCursorPosCallback(window, MoveFunc);
-  glfwSetMouseButtonCallback(window, ClickFunc);
+  //glfwSetWindowFocusCallback(window, ActiveFunc);
+  //glfwSetWindowSizeCallback(window, ReshapeFunc);
+  //glfwSetWindowCloseCallback(window, CloseFunc);
+  //glfwSetCursorPosCallback(window, MoveFunc);
+  //glfwSetMouseButtonCallback(window, ClickFunc);
 
   ReshapeWindow(w, h);
 

@@ -1,4 +1,6 @@
 #pragma once
+#include "libs/Eigen/Geometry"
+#include "Utilities.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Material: encapsulates a BRDF and communication with a shader.
@@ -22,6 +24,11 @@ public:
     specularity = o.specularity;
     _isLight = o._isLight;
   }
+
+  // Explicitly declare move operations
+    Material(Material&&) noexcept = default;
+    Material& operator=(Material&&) noexcept = default;
+
 
   float D(Eigen::Vector3f h, Eigen::Vector3f N);
   Eigen::Vector3f F(float a);

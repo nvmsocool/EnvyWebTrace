@@ -1,4 +1,5 @@
 #pragma once
+#include "Utilities.h"
 
 struct ImageData
 {
@@ -23,7 +24,7 @@ struct ImageData
   {
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++)
-        data[y * w + x] = Color(0, 0, 0);
+        data[y * w + x] = Color(0);
     trace_num = 1;
   }
 };

@@ -12,11 +12,13 @@ class Shape;
 #include "ImageData.h"
 
 // shapes
-#include "Shapes/Shape.h"
-#include "Shapes/Sphere.h"
-#include "Shapes/Box.h"
-#include "Shapes/Cylinder.h"
-#include "Shapes/Fractal.h"
+#include "Shape.h"
+#include "Sphere.h"
+#include "Box.h"
+#include "Cylinder.h"
+#include "Fractal.h"
+#include "libs/Eigen_unsupported/Eigen/src/BVH/KdBVH.h"
+#include "libs/Eigen_unsupported/Eigen/src/BVH/BVAlgorithms.h"
 
 class Tracer
 {

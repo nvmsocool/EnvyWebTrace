@@ -2,6 +2,7 @@
 #include "Ray.h"
 #include "Intersection.h"
 #include "Bbox.h"
+#include "libs/Eigen/Geometry"
 
 class Shape;
 class Intersection;

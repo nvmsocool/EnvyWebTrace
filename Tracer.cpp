@@ -4,7 +4,7 @@
 
 #include "Tracer.h"
 #include "Ray.h"
-#include <Eigen_unsupported/Eigen/src/BVH/BVAlgorithms.h>
+#include <iostream>
 
 #include <chrono>
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include "libs/Eigen/Geometry"
 
 class Camera
 {
