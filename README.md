@@ -6,7 +6,7 @@ See the [Live Demo](https://nvmsocool.github.io/EnvyWebTrace/imgui.html) here.
 
 Screenshot:
 
-<img src="https://i.imgur.com/jJXdlES.png"></img>
+<img src="screenshot.png"></img>
 
 This example uses Emscripted to compile c++ into Web Assembly (WASM) binaries that can be run as an application in the browser.
 
