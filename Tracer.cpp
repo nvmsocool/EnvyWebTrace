@@ -48,11 +48,6 @@ void Tracer::Command(const std::vector<std::string> &strings,
     return;
   std::string c = strings[0];
 
-  int num_boxes = 0;
-  int num_spheres = 0;
-  int num_cylinders = 0;
-  int num_fractals = 0;
-
   if (c == "screen")
   {
     // syntax: screen width height

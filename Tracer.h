@@ -98,4 +98,11 @@ public:
   //for gif rendering
   void TakeSnapshot(int snapshot_num);
   void InterpolateSnapshots(float i);
+
+private:
+
+  int num_boxes = 0;
+  int num_spheres = 0;
+  int num_cylinders = 0;
+  int num_fractals = 0;
 };

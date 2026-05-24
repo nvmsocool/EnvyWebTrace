@@ -151,6 +151,7 @@ void ReadScene()
   }
 }
 
+int pW = 1, pH = 1;
 
 void DrawGUI()
 {
@@ -160,15 +161,16 @@ void DrawGUI()
   ImGui::NewFrame();
 
   // Set top and left padding to 20 pixels
-ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
   ImGui::SetNextWindowSize(ImVec2((float)image.w, (float)image.h));
-  ImGui::SetNextWindowPos(ImVec2(((float)display->window_width-display->gui_width-image.w)/2, (float)(display->window_height-image.h)/2));
+  ImGui::SetNextWindowPos(ImVec2((float)(display->window_width-display->gui_width-image.w)/2.f, (float)(display->window_height-image.h)/2.f));
   ImGui::Begin("Image", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
   ImVec2 end = ImVec2(1,1);
   if (previewed_this_frame)
   {
-    end = ImVec2((float)preview.w/(float)image.w, (float)preview.h/(float)image.h);
+    end = ImVec2((float)pW/(float)image.w, (float)pH/(float)image.h);
   }
   ImGui::Image(
       (ImTextureID)(intptr_t)display->textureID,
@@ -178,7 +180,8 @@ ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
   );
   ImGui::End();
   
-ImGui::PopStyleVar();
+  ImGui::PopStyleVar();
+  ImGui::PopStyleVar();
 
   ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
   ImGui::SetNextWindowPos(ImVec2((float)(display->window_width - display->gui_width), 0.f));
@@ -188,9 +191,7 @@ ImGui::PopStyleVar();
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
   ImGui::Text("%.3fs/trace, conv=%.4f", traceDuration, traceDiff);
-  ImGui::Text("Preview size: %d x %d", preview.w, preview.h);
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
-  ImGui::Text("Preview Frames: %d", preview.trace_num);
   if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
   {
     ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
@@ -375,6 +376,8 @@ void loop()
       if (preview.trace_num > 1)
       {
         display->DrawArray(preview);
+        pW = preview.w;
+        pH = preview.h;
         ResizePreview();
       }
     }
