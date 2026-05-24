@@ -7,10 +7,15 @@ struct ImageData
   int h;
   size_t trace_num;
   std::vector<Color> data;
+  int currX;
+  int currY;
+  int nPathsPerTrace;
 
   // for progress bar
   float pctComplete;
   float pixel_num;
+
+  float diff;
 
   void Resize(int _w, int _h)
   {
@@ -26,5 +31,9 @@ struct ImageData
       for (int x = 0; x < w; x++)
         data[y * w + x] = Color(0);
     trace_num = 1;
+    currX = 0;
+    currY = 0;
+    nPathsPerTrace = 1;
+    diff = 0;
   }
 };

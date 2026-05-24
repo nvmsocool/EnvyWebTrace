@@ -186,49 +186,59 @@ void Tracer::Command(const std::vector<std::string> &strings,
 float Tracer::TraceImage(ImageData &id, bool update_pass, int n_threads)
 {
 
-  float diff = 0;
   float weight = 1.f / static_cast<float>(id.trace_num);
-  id.pixel_num = 0;
+  
+
+  Ray r(Eigen::Vector3f::Ones(), Eigen::Vector3f::Ones());
+  Minimizer minimizer(r);
+  int y_add = id.currY * id.w;
 
 //#pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads) // Magic: Multi-thread y loop
-  for (int y = 0; y < id.h; y++)
+  for (int path = 0; path < id.nPathsPerTrace; path++)
   {
 
-    Ray r(Eigen::Vector3f::Ones(), Eigen::Vector3f::Ones());
-    Minimizer minimizer(r);
-    int y_add = y * id.w;
+    if (halfDome)
+      SetRayHalfDome(id, r, id.currX, id.currY);
+    else if (depth_of_field)
+      SetRayDOF(id, r, id.currX, id.currY);
+    else if (use_AA)
+      SetRayAA(id, r, id.currX, id.currY);
+    else
+      SetRayDirect(id, r, id.currX, id.currY);
 
-    for (int x = 0; x < id.w; x++)
+    int pos = y_add + id.currX;
+    Color old = id.data[pos];
+    if (DefaultMode == Tracer::TRACE_MODE::FULL)
+      id.data[pos] = (1 - weight) * old + weight * BVHTracePath(r, minimizer, false);
+    else
+      id.data[pos] = (1 - weight) * old + weight * BVHTraceDebug(r, minimizer, DefaultMode);
+
+    if (update_pass)
+      id.diff += std::abs(old.x() - id.data[pos].x()) + std::abs(old.y() - id.data[pos].y()) + std::abs(old.z() - id.data[pos].z());
+    id.pixel_num += 1.f;
+    id.pctComplete = id.pixel_num / (float)(id.data.size());
+
+    id.currX++;
+    if (id.currX == id.w)
     {
-      if (halfDome)
-        SetRayHalfDome(id, r, x, y);
-      else if (depth_of_field)
-        SetRayDOF(id, r, x, y);
-      else if (use_AA)
-        SetRayAA(id, r, x, y);
-      else
-        SetRayDirect(id, r, x, y);
-
-      int pos = y_add + x;
-      Color old = id.data[pos];
-      if (DefaultMode == Tracer::TRACE_MODE::FULL)
-        id.data[pos] = (1 - weight) * old + weight * BVHTracePath(r, minimizer, false);
-      else
-        id.data[pos] = (1 - weight) * old + weight * BVHTraceDebug(r, minimizer, DefaultMode);
-
-      if (update_pass)
-        diff += std::abs(old.x() - id.data[pos].x()) + std::abs(old.y() - id.data[pos].y()) + std::abs(old.z() - id.data[pos].z());
-      id.pixel_num += 1.f;
-      id.pctComplete = id.pixel_num / (float)(id.data.size());
+      id.currX = 0;
+      id.currY++;
+      if (id.currY == id.h)
+      {
+        id.currY = 0;
+        id.pixel_num = 0;
+        id.trace_num++;
+        weight = 1.f / static_cast<float>(id.trace_num);
+        if (update_pass)
+        {
+          id.diff /= id.data.size();
+          int ret = id.diff;
+          id.diff = 0;
+          return ret;
+        }
+      }
+      y_add = id.currY * id.w;
     }
-  }
-
-  id.trace_num++;
-
-  if (update_pass)
-  {
-    diff /= id.data.size();
-    return diff;
   }
   return 1;
 }

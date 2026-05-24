@@ -184,40 +184,6 @@ void DrawGUI()
 
   ImGui::BeginChild("settings");
 
-  if (ImGui::CollapsingHeader("scene"))
-  {
-    ImGui::Indent(16.0f);
-
-    //ImGui::InputText("scene_file", &baseName);
-    if (ImGui::InputText("Text", baseNameArr.data(), baseNameArr.size(),
-            ImGuiInputTextFlags_CallbackCharFilter))
-    {
-      baseName = baseNameArr.data();
-      ResetFileName();
-    }
-    if (ImGui::IsItemActive())
-      isEnteringText = true;
-    else
-      isEnteringText = false;
-
-    // if (ImGui::Button("load_scene"))
-    // {
-    //   //reload scene
-    //   shouldReload = true;
-    // }
-    // if (ImGui::Button("save_scene"))
-    // {
-    //   SaveCopy();
-    //   SaveScene(sceneName, tracer);
-    // }
-    // if (ImGui::Button("BMP snap"))
-    // {
-    //   generateBitmapImage(image, bmpName.data());
-    //   SaveCopy();
-    // }
-
-    ImGui::Unindent(16.0f);
-  }
   if (ImGui::CollapsingHeader("tracer settings"))
   {
     ImGui::Indent(16.0f);
@@ -336,128 +302,122 @@ void ResetTrace()
 void MainTrace()
 {
   if (shouldReset)
-      {
-        image.Clear();
+  {
+    image.Clear();
 
-        //this has to happen here due to the potentially different trace times that modes can result in
-        tracer->DefaultMode = static_cast<Tracer::TRACE_MODE>(tracer_mode);
+    //this has to happen here due to the potentially different trace times that modes can result in
+    tracer->DefaultMode = static_cast<Tracer::TRACE_MODE>(tracer_mode);
 
-        // starting render, disable inputs
-        if (tracer->DefaultMode == Tracer::TRACE_MODE::FULL)
-        {
-          tracer->camera.controlsEnabled = false;
-          srand(427857);
-        }
-        shouldReset = false;
-      }
+    // starting render, disable inputs
+    if (tracer->DefaultMode == Tracer::TRACE_MODE::FULL)
+    {
+      tracer->camera.controlsEnabled = false;
+      srand(427857);
+    }
+    shouldReset = false;
+  }
 
-      if (uiResized)
-      {
-        ResizeImages();
-        ResetTrace();
-        uiResized = false;
-      }
+  if (uiResized)
+  {
+    ResizeImages();
+    ResetTrace();
+    uiResized = false;
+  }
 
-      auto start_time = std::chrono::high_resolution_clock::now();
-      bool update_pass = (image.trace_num - 1) % 10 == 0;
+  auto start_time = std::chrono::high_resolution_clock::now();
+  bool update_pass = (image.trace_num - 1) % 10 == 0;
 
-      float diff = tracer->TraceImage(image, update_pass, 1);
-      if (update_pass)
-        traceDiff = diff;
+  float diff = tracer->TraceImage(image, update_pass, 1);
+  if (update_pass)
+    traceDiff = diff;
 
-      auto end_time = std::chrono::high_resolution_clock::now();
-      float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count());
-      traceDuration = ms / 1000000.f;
+  auto end_time = std::chrono::high_resolution_clock::now();
+  float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count());
+  traceDuration = ms / 1000000.f;
 }
 
 void loop()
 {
-  /*
-  
-  display->PollEvents();
-
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-
-  DrawGUI();
-
-  ImGui::Render();
-
-  
-  */
-
   display->PollEvents();
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
-    if (!display->closed)
+  if (!display->closed)
+  {
+    tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
+    MainTrace();
+    if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
     {
-      tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
-      MainTrace();
-      if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
-      {
-        float diff = tracer->TraceImage(preview, false, 1);
-        display->DrawArray(preview);
-        previewed_this_frame = true;
-      }
-      else
-      {
-        display->DrawArray(image);
-      }
-      DrawGUI();
-      display->FinishDrawing();
+      float diff = tracer->TraceImage(preview, false, 1);
+      display->DrawArray(preview);
+      previewed_this_frame = true;
     }
-
-    display->UpdateEvent();
-
-    if (display->clickRequest)
+    else
     {
-      if (display->real_mouse_x < display->window_width - display->gui_width)
-        singleTrace = tracer->SinglePixelDebugTrace(image, display->mouse_x, display->mouse_y);
-      display->clickRequest = false;
+      display->DrawArray(image);
     }
+    DrawGUI();
+    display->FinishDrawing();
+  }
 
-    if (display->active && !isEnteringText && tracer->camera.controlsEnabled)
+  display->UpdateEvent();
+
+  if (display->clickRequest)
+  {
+    if (display->real_mouse_x < display->window_width - display->gui_width)
+      singleTrace = tracer->SinglePixelDebugTrace(image, display->mouse_x, display->mouse_y);
+    display->clickRequest = false;
+  }
+
+  if (display->active && !isEnteringText && tracer->camera.controlsEnabled)
+  {
+    if (tracer->camera.Update())
+      ResetTrace();
+  }
+
+  auto end_time = std::chrono::high_resolution_clock::now();
+
+  float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
+
+  float ms_to_wait = std::max(0.f, maxMsToWait - ms);
+
+  guiFPS = 1000 / std::max(ms, maxMsToWait);
+
+  if (guiFPS >= maxFPS)
+  {
+    image.nPathsPerTrace++;
+  }
+  else if (image.nPathsPerTrace > 1)
+  {
+    image.nPathsPerTrace--;
+  }
+
+  if (previewed_this_frame)
+  {
+    //negative->make smaller, 0->no change, 100->make bigger
+    totalFromMsHistory += ms_to_wait;
+    msToWaitHistory.push_back(ms_to_wait);
+    if (msToWaitHistory.size() > 100)
     {
-      if (tracer->camera.Update())
-        ResetTrace();
+      totalFromMsHistory -= msToWaitHistory.front();
+      msToWaitHistory.pop_front();
     }
+    float avg_ms_to_wait = totalFromMsHistory / msToWaitHistory.size();
+    float ideal_ratio = std::max(min_ratio, std::min(1.f, avg_ms_to_wait / maxMsToWait));
 
-    auto end_time = std::chrono::high_resolution_clock::now();
+    //lerp to smooth variance
+    float suggested_ratio = (ideal_ratio + previewRatio) / 2;
 
-    float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
-
-    float ms_to_wait = std::max(0.f, maxMsToWait - ms);
-
-    guiFPS = 1000 / std::max(ms, maxMsToWait);
-
-    if (previewed_this_frame)
+    //as # preview traces increases, stop caring about traces
+    if (std::abs(previewRatio - suggested_ratio) > 0.02f + 0.001f * (float)preview.trace_num)
     {
-      //negative->make smaller, 0->no change, 100->make bigger
-      totalFromMsHistory += ms_to_wait;
-      msToWaitHistory.push_back(ms_to_wait);
-      if (msToWaitHistory.size() > 100)
-      {
-        totalFromMsHistory -= msToWaitHistory.front();
-        msToWaitHistory.pop_front();
-      }
-      float avg_ms_to_wait = totalFromMsHistory / msToWaitHistory.size();
-      float ideal_ratio = std::max(min_ratio, std::min(1.f, avg_ms_to_wait / maxMsToWait));
-
-      //lerp to smooth variance
-      float suggested_ratio = (ideal_ratio + previewRatio) / 2;
-
-      //as # preview traces increases, stop caring about traces
-      if (std::abs(previewRatio - suggested_ratio) > 0.02f + 0.001f * (float)preview.trace_num)
-      {
-        previewRatio = suggested_ratio;
-        ResizePreview();
-      }
-      previewed_this_frame = false;
+      previewRatio = suggested_ratio;
+      ResizePreview();
     }
+    previewed_this_frame = false;
+  }
 
-    display->ClearWindow();
+  display->ClearWindow();
 
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -497,8 +457,6 @@ int init()
   display = new Display();
   
   tracer->ClearAll();
-
-  //SaveCopy();
 
   // Read the scene, calling scene.Command for each line.
   ReadScene();
