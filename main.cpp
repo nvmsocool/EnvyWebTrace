@@ -161,25 +161,25 @@ void DrawGUI()
 
   // Set top and left padding to 20 pixels
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-  ImGui::SetNextWindowSize(ImVec2((float)image.w, (float)image.h));
-  ImGui::SetNextWindowPos(ImVec2((float)(display->window_width-display->gui_width-image.w)/2.f, (float)(display->window_height-image.h)/2.f));
-  ImGui::Begin("Image", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
+  ImGui::SetNextWindowSize(ImVec2((float)(display->window_width-display->gui_width), (float)(display->window_height)));
+  ImGui::SetNextWindowPos(ImVec2(0,0));
+
+  ImGui::Begin("Image", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
   ImVec2 end = ImVec2(1,1);
   if (previewed_this_frame)
   {
     end = ImVec2((float)pW/(float)image.w, (float)pH/(float)image.h);
   }
+  ImGui::SetCursorPos(ImVec2((float)(display->window_width-display->gui_width-image.w)/2.f, (float)(display->window_height-image.h)/2.f));
   ImGui::Image(
       (ImTextureID)(intptr_t)display->textureID,
       ImVec2((float)image.w, (float)image.h),
-      ImVec2(0,0),
+      ImVec2(0, 0),
       end
   );
   ImGui::End();
   
-  ImGui::PopStyleVar();
   ImGui::PopStyleVar();
 
   ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
