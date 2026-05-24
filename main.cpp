@@ -441,9 +441,6 @@ int init()
   SetupScene();
   
   tracer->DefaultMode = Tracer::TRACE_MODE::DIFFUSE;
-
-  delete tracer;
-  delete display;
   return 0;
 }
 
@@ -456,6 +453,9 @@ void quit()
 
   glfwDestroyWindow(g_window);
   glfwTerminate();
+
+  delete tracer;
+  delete display;
 }
 
 
