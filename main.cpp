@@ -49,10 +49,13 @@ float traceDiff = 0;
 // fps vars
 float guiFPS = 0;
 int maxFPS = 90;
+int previewFPS = 10;
 float maxMsToWait;
 
 // preview vars
 std::list<float> msToWaitHistory;
+std::list<float> fpsHistory;
+float totalFPSFromMsHistory = 0;
 float totalFromMsHistory = 0;
 float previewRatio = 0.1f;
 float min_ratio;
@@ -65,11 +68,11 @@ bool previewed_this_frame = false;
 
 void ResetTrace();
 void ResetFileName(){}
-void HandleGifFrame();
 
 void ResizePreview()
 {
-  preview.Resize((int)(previewRatio * tracer->requested_width), (int)(previewRatio * tracer->requested_height));
+  preview.Resize(std::max(1,(int)(previewRatio * tracer->requested_width)), std::max(1,(int)(previewRatio * tracer->requested_height)));
+  previewRatio = (float)(preview.w + 1) / (float)image.w;
 }
 
 void ResizeImage()
@@ -88,6 +91,7 @@ void ResizeImage()
 void ResizeImages()
 {
   ResizeImage();
+  previewRatio = (float)preview.nPathsPerTrace * (maxFPS / (float)previewFPS) / (float)(tracer->requested_height * tracer->requested_width) ;
   ResizePreview();
 }
 
@@ -102,7 +106,7 @@ void ReadScene()
 {
   std::vector<std::string> sceneLines = 
   {
-    "screen 80 60",
+    "screen 800 600",
     "camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000",
     "light 5.000000 5.000000 5.000000 ",
     "sphere 3.500000 -2.500000 0.500000 1.500000 ",
@@ -155,14 +159,26 @@ void DrawGUI()
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  ImGui::SetNextWindowSize(ImVec2((float)display->window_width-display->gui_width, (float)display->window_height));
-  ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
-  ImGui::Begin("Fractal Image", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
+  // Set top and left padding to 20 pixels
+ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+  ImGui::SetNextWindowSize(ImVec2((float)image.w, (float)image.h));
+  ImGui::SetNextWindowPos(ImVec2(((float)display->window_width-display->gui_width-image.w)/2, (float)(display->window_height-image.h)/2));
+  ImGui::Begin("Image", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
+  ImVec2 end = ImVec2(1,1);
+  if (previewed_this_frame)
+  {
+    end = ImVec2((float)preview.w/(float)image.w, (float)preview.h/(float)image.h);
+  }
   ImGui::Image(
       (ImTextureID)(intptr_t)display->textureID,
-      ImVec2((float)display->window_width-display->gui_width, (float)display->window_height)
+      ImVec2((float)image.w, (float)image.h),
+      ImVec2(0,0),
+      end
   );
   ImGui::End();
+  
+ImGui::PopStyleVar();
 
   ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
   ImGui::SetNextWindowPos(ImVec2((float)(display->window_width - display->gui_width), 0.f));
@@ -172,7 +188,9 @@ void DrawGUI()
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
   ImGui::Text("%.3fs/trace, conv=%.4f", traceDuration, traceDiff);
-  ImGui::Text("Preview Ratio: %.4f", previewRatio);
+  ImGui::Text("Preview size: %d x %d", preview.w, preview.h);
+  ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
+  ImGui::Text("Preview Frames: %d", preview.trace_num);
   if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
   {
     ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
@@ -297,6 +315,8 @@ void ResetTrace()
   shouldReset = true;
   preview.Clear();
   traceDiff = 100;
+  previewRatio = (float)preview.nPathsPerTrace * (maxFPS / (float)previewFPS) / (float)(tracer->requested_height * tracer->requested_width) ;
+  ResizePreview();
 }
 
 void MainTrace()
@@ -342,15 +362,21 @@ void loop()
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
+      previewed_this_frame = false;
+
   if (!display->closed)
   {
     tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
     MainTrace();
     if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
     {
-      float diff = tracer->TraceImage(preview, false, 1);
-      display->DrawArray(preview);
       previewed_this_frame = true;
+      float diff = tracer->TraceImage(preview, false, 1);
+      if (preview.trace_num > 1)
+      {
+        display->DrawArray(preview);
+        ResizePreview();
+      }
     }
     else
     {
@@ -379,42 +405,18 @@ void loop()
 
   float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
 
-  float ms_to_wait = std::max(0.f, maxMsToWait - ms);
+  guiFPS = 1000 / ms;
 
-  guiFPS = 1000 / std::max(ms, maxMsToWait);
-
-  if (guiFPS >= maxFPS)
+  // do this smarter
+  if (guiFPS > maxFPS)
   {
     image.nPathsPerTrace++;
+    preview.nPathsPerTrace++;
   }
   else if (image.nPathsPerTrace > 1)
   {
     image.nPathsPerTrace--;
-  }
-
-  if (previewed_this_frame)
-  {
-    //negative->make smaller, 0->no change, 100->make bigger
-    totalFromMsHistory += ms_to_wait;
-    msToWaitHistory.push_back(ms_to_wait);
-    if (msToWaitHistory.size() > 100)
-    {
-      totalFromMsHistory -= msToWaitHistory.front();
-      msToWaitHistory.pop_front();
-    }
-    float avg_ms_to_wait = totalFromMsHistory / msToWaitHistory.size();
-    float ideal_ratio = std::max(min_ratio, std::min(1.f, avg_ms_to_wait / maxMsToWait));
-
-    //lerp to smooth variance
-    float suggested_ratio = (ideal_ratio + previewRatio) / 2;
-
-    //as # preview traces increases, stop caring about traces
-    if (std::abs(previewRatio - suggested_ratio) > 0.02f + 0.001f * (float)preview.trace_num)
-    {
-      previewRatio = suggested_ratio;
-      ResizePreview();
-    }
-    previewed_this_frame = false;
+    preview.nPathsPerTrace--;
   }
 
   display->ClearWindow();

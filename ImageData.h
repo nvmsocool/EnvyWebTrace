@@ -9,7 +9,7 @@ struct ImageData
   std::vector<Color> data;
   int currX;
   int currY;
-  int nPathsPerTrace;
+  int nPathsPerTrace = 1;
 
   // for progress bar
   float pctComplete;
@@ -33,7 +33,6 @@ struct ImageData
     trace_num = 1;
     currX = 0;
     currY = 0;
-    nPathsPerTrace = 1;
     diff = 0;
   }
 };

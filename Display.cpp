@@ -70,8 +70,8 @@ void Display::CreateTexture()
         GL_TEXTURE_2D,
         0,
         34837,
-        window_width,
-        window_height,
+        render_width,
+        render_height,
         0,
         GL_RGB,
         GL_FLOAT,
@@ -252,7 +252,7 @@ void Display::ClearWindow()
   glfwMakeContextCurrent(window);
   glfwGetFramebufferSize(window, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
-  glClearColor(0.5f, 0.6f, 0.50f, 1.00f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
