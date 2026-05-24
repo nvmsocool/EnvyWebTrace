@@ -4,19 +4,19 @@
 
 Camera::Camera()
 {
-  moveKeyAmts["A"] = Eigen::Vector3f(-1, 0, 0);
-  moveKeyAmts["D"] = Eigen::Vector3f(1, 0, 0);
-  moveKeyAmts["E"] = Eigen::Vector3f(0, 0, -1);
-  moveKeyAmts["Q"] = Eigen::Vector3f(0, 0, 1);
-  moveKeyAmts["W"] = Eigen::Vector3f(0, 1, 0);
-  moveKeyAmts["S"] = Eigen::Vector3f(0, -1, 0);
+  moveKeyAmts[ImGuiKey_A] = Eigen::Vector3f(-1, 0, 0);
+  moveKeyAmts[ImGuiKey_D] = Eigen::Vector3f(1, 0, 0);
+  moveKeyAmts[ImGuiKey_E] = Eigen::Vector3f(0, 0, -1);
+  moveKeyAmts[ImGuiKey_Q] = Eigen::Vector3f(0, 0, 1);
+  moveKeyAmts[ImGuiKey_W] = Eigen::Vector3f(0, -1, 0);
+  moveKeyAmts[ImGuiKey_S] = Eigen::Vector3f(0, 1, 0);
 
-  rotKeyAmts["J"] = Eigen::Vector3f(0, 1, 0);
-  rotKeyAmts["L"] = Eigen::Vector3f(0, -1, 0);
-  rotKeyAmts["K"] = Eigen::Vector3f(-1, 0, 0);
-  rotKeyAmts["I"] = Eigen::Vector3f(1, 0, 0);
-  rotKeyAmts["O"] = Eigen::Vector3f(0, 0, -1);
-  rotKeyAmts["U"] = Eigen::Vector3f(0, 0, 1);
+  rotKeyAmts[ImGuiKey_J] = Eigen::Vector3f(0, 1, 0);
+  rotKeyAmts[ImGuiKey_L] = Eigen::Vector3f(0, -1, 0);
+  rotKeyAmts[ImGuiKey_K] = Eigen::Vector3f(-1, 0, 0);
+  rotKeyAmts[ImGuiKey_I] = Eigen::Vector3f(1, 0, 0);
+  rotKeyAmts[ImGuiKey_O] = Eigen::Vector3f(0, 0, -1);
+  rotKeyAmts[ImGuiKey_U] = Eigen::Vector3f(0, 0, 1);
 }
 
 void Camera::SetProperties(Eigen::Quaternionf r, Eigen::Vector3f p, float _ry, float w, float h, float fov_amt, float fov_dist)
@@ -61,10 +61,9 @@ void Camera::UpdateFOV(float w, float h)
   ResetViews();
 }
 
-bool IsKeyDown(char *key)
+bool IsKeyDown(ImGuiKey key)
 {
-  return false;
-  //return GetAsyncKeyState(keyLookup[key]);
+  return ImGui::IsKeyDown(key);
 }
 
 bool Camera::Update()

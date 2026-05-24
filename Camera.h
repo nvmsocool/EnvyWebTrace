@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include "libs/Eigen/Geometry"
+#include "imgui.h"
 
 class Camera
 {
@@ -13,11 +14,11 @@ public:
   Eigen::Vector3f position, displayRotation, ViewX, ViewY, ViewZ;
   Eigen::Quaternionf rotation;
 
-  std::unordered_map<char*, Eigen::Vector3f> moveKeyAmts;
-  std::unordered_map<char*, Eigen::Vector3f> rotKeyAmts;
+  std::unordered_map<ImGuiKey, Eigen::Vector3f> moveKeyAmts;
+  std::unordered_map<ImGuiKey, Eigen::Vector3f> rotKeyAmts;
 
   //camera movement settings
-  float speedMove = 0.1f;
+  float speedMove = 0.01f;
   float speedRot = 2.f;
   bool controlsEnabled = true;
 
