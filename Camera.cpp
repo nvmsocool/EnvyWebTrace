@@ -13,8 +13,8 @@ Camera::Camera()
 
   rotKeyAmts[ImGuiKey_J] = Eigen::Vector3f(0, 1, 0);
   rotKeyAmts[ImGuiKey_L] = Eigen::Vector3f(0, -1, 0);
-  rotKeyAmts[ImGuiKey_K] = Eigen::Vector3f(-1, 0, 0);
-  rotKeyAmts[ImGuiKey_I] = Eigen::Vector3f(1, 0, 0);
+  rotKeyAmts[ImGuiKey_K] = Eigen::Vector3f(1, 0, 0);
+  rotKeyAmts[ImGuiKey_I] = Eigen::Vector3f(-1, 0, 0);
   rotKeyAmts[ImGuiKey_O] = Eigen::Vector3f(0, 0, -1);
   rotKeyAmts[ImGuiKey_U] = Eigen::Vector3f(0, 0, 1);
 }
