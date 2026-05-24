@@ -3,8 +3,7 @@ CXXFLAGS = -std=c++11 -Wall -w
 OUTPUT = imgui.js
 IMGUI_DIR:=../imgui
 
-SOURCES = main.cpp
-SOURCES += Display.cpp Camera.cpp Shape.cpp Tracer.cpp Material.cpp Minimizer.cpp
+SOURCES = $(wildcard *.cpp)
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_widgets.cpp $(IMGUI_DIR)/imgui_tables.cpp
 

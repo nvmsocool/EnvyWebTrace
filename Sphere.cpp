@@ -1,4 +1,5 @@
 #include "Sphere.h"
+#include "Utilities.h"
 
 void Sphere::Intersect(const Ray &in, Intersection &i)
 {

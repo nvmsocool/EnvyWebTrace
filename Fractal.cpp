@@ -1,5 +1,5 @@
 #include "Fractal.h"
-#include "..\material.h"
+#include "Material.h"
 
 static const Eigen::Vector3f norm_step_x(1.f, 0.0f, 0.0f);
 static const Eigen::Vector3f norm_step_y(0.0f, 1.f, 0.0f);

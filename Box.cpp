@@ -1,5 +1,5 @@
 #include "Box.h"
-#include "..\Interval.h"
+#include "Interval.h"
 
 void Box::Intersect(const Ray &in, Intersection &i)
 {

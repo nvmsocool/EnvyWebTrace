@@ -104,15 +104,65 @@ void ResetFPS()
   maxMsToWait = 1000.f / (float)maxFPS;
 }
 
+// Read a scene file by parsing each line as a command and calling
+// scene->Command(...) with the results.
+void ReadScene()
+{
+  std::vector<std::string> sceneLines = 
+  {
+    "screen 800 600",
+    "camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000",
+    "light 5.000000 5.000000 5.000000 ",
+    "sphere 3.500000 -2.500000 0.500000 1.500000 ",
+    "brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 ",
+    "fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 ",
+    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
+    "box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 ",
+    "box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 ",
+    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
+    "box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 ",
+    "box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 ",
+    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
+    "box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000 ",
+    "box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000 "
+  };
+
+  // For each line in file
+  for (const std::string& line : sceneLines)
+  {
+    std::vector<std::string> strings;
+    std::vector<float> floats;
+
+    // Parse as parallel lists of strings and floats
+    std::stringstream lineStream(line);
+    for (std::string s; lineStream >> s;)
+    { // Parses space-separated strings until EOL
+      float f;
+      //std::stringstream(s) >> f; // Parses an initial float into f, or zero if illegal
+      if (!(std::stringstream(s) >> f))
+        f = (float)nan(""); // An alternate that produced NANs
+      floats.push_back(f);
+      strings.push_back(s);
+    }
+
+    if (strings.size() == 0)
+      continue; // Skip blanks lines
+    if (strings[0][0] == '#')
+      continue; // Skip comment lines
+
+    // Pass the line's data to Command(...)
+    tracer->Command(strings, floats);
+  }
+}
+
 void SetupScene()
 {
-
   tracer->ClearAll();
 
   //SaveCopy();
 
   // Read the scene, calling scene.Command for each line.
-  //ReadScene();
+  ReadScene();
 
   tracer->Finit();
 
@@ -130,8 +180,8 @@ void SetupScene()
 void DrawGUI()
 {
 
-  //ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
-  //ImGui::SetNextWindowPos(ImVec2((float)(display->window_width - display->gui_width), 0.f));
+  ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
+  ImGui::SetNextWindowPos(ImVec2((float)(display->window_width - display->gui_width), 0.f));
 
   ImGui::Begin("Fractal Tracer", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
 
@@ -310,43 +360,6 @@ void loop()
 
   DrawGUI();
 
-  // // 1. Show a simple window.
-  // // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets automatically appears in a window called "Debug".
-  // {
-  //     static float f = 0.0f;
-  //     static int counter = 0;
-  //     ImGui::Text("Hello, world!");                           // Display some text (you can use a format string too)
-  //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-  //     ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-// 
-  //     ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
-  //     ImGui::Checkbox("Another Window", &show_another_window);
-// 
-  //     if (ImGui::Button("Button"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
-  //         counter++;
-  //     ImGui::SameLine();
-  //     ImGui::Text("counter = %d", counter);
-// 
-  //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-  // }
-// 
-  // // 2. Show another simple window. In most cases you will use an explicit Begin/End pair to name your windows.
-  // if (show_another_window)
-  // {
-  //     ImGui::Begin("Another Window", &show_another_window);
-  //     ImGui::Text("Hello from another window!");
-  //     if (ImGui::Button("Close Me"))
-  //         show_another_window = false;
-  //     ImGui::End();
-  // }
-// 
-  // // 3. Show the ImGui demo window. Most of the sample code is in ImGui::ShowDemoWindow(). Read its code to learn more about Dear ImGui!
-  // if (show_demo_window)
-  // {
-  //     ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver); // Normally user code doesn't need/want to call this because positions are saved in .ini file anyway. Here we just want to make the demo initial state a bit more friendly!
-  //     ImGui::ShowDemoWindow(&show_demo_window);
-  // }
-
   ImGui::Render();
 
   int display_w, display_h;
@@ -363,6 +376,7 @@ void loop()
 
 int init_gl()
 {
+  // init
   if(!glfwInit())
   {
       fprintf(stderr, "Failed to initialize GLFW\n");
@@ -374,6 +388,7 @@ int init_gl()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 
+  // window
   // Open a window and create its OpenGL context.
   // The window is created with minimal size,
   // which will be updated with an automatic resize. 
@@ -386,7 +401,6 @@ int init_gl()
       return -1;
   }
   glfwMakeContextCurrent(g_window); // Initialize GLEW
-
   return 0;
 }
 
@@ -420,6 +434,16 @@ int init()
 {
   init_gl();
   init_imgui();
+
+  tracer = new Tracer();
+  display = new Display();
+  
+  SetupScene();
+  
+  tracer->DefaultMode = Tracer::TRACE_MODE::DIFFUSE;
+
+  delete tracer;
+  delete display;
   return 0;
 }
 
@@ -438,13 +462,6 @@ void quit()
 int main(int argc, char** argv)
 {
   if (init() != 0) return 1;
-
-  tracer = new Tracer();
-  display = new Display();
-  
-  SetupScene();
-
-  tracer->DefaultMode = Tracer::TRACE_MODE::DIFFUSE;
 
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, 0, 1);

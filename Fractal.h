@@ -1,5 +1,6 @@
 #pragma once
 #include "Shape.h"
+#include "Utilities.h"
 
 class Material;
 

@@ -1,5 +1,6 @@
 #include "Cylinder.h"
-#include "..\Interval.h"
+#include "Interval.h"
+#include "Utilities.h"
 
 void Cylinder::ResetSettings()
 {
