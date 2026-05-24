@@ -1,5 +1,6 @@
 #pragma once
 #include "ImageData.h"
+#include <GLES3/gl3.h>
 
 struct GLFWwindow;
 
@@ -9,6 +10,7 @@ public:
   Display(){};
 
   GLFWwindow* window;
+  GLuint textureID;
 
   int window_width, window_height;
   int render_width, render_height;
@@ -28,4 +30,11 @@ public:
   void CalcImageViewport();
 
   void SetupWindow(int w, int h);
+  void DestroyWindow();
+  void ClearWindow();
+  void Finish();
+  void PollEvents();
+
+private:
+  void CreateTexture();
 };

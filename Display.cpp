@@ -1,16 +1,7 @@
 #include "Display.h"
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-//#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 #include "Utilities.h"
-
-// needed for imgui compatability
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
-#endif
-
 
 // global callbacks for glfw
 
@@ -40,13 +31,7 @@ void CloseFunc(GLFWwindow *window)
 {
   globalDisplay->closed = true;
 
-  // Cleanup
-  ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
-
-  //glfwDestroyWindow(globalDisplay->window);
-  //glfwTerminate();
+  
 }
 
 void ActiveFunc(GLFWwindow *window, int focused)
@@ -56,11 +41,43 @@ void ActiveFunc(GLFWwindow *window, int focused)
 
 void ClickFunc(GLFWwindow *window, int button, int action, int mods)
 {
-  //if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
-  //  globalDisplay->clickRequest = true;
+  if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
+    globalDisplay->clickRequest = true;
 }
 
 // class functions
+GLuint textureID;
+
+void Display::CreateTexture()
+{
+  if (textureID != 0)
+    {
+        glDeleteTextures(1, &textureID);
+        textureID = 0;
+    }
+    
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Allocate texture memory
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        34837,
+        window_width,
+        window_height,
+        0,
+        GL_RGB,
+        GL_FLOAT,
+        nullptr
+    );
+}
 
 void Display::DrawArray(ImageData &id)
 {
@@ -68,41 +85,35 @@ void Display::DrawArray(ImageData &id)
   if (closed)
     return;
 
-  //glEnable(GL_TEXTURE_2D);
-  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)GL_LINEAR);
-//
-  //glTexImage2D(
-  //    GL_TEXTURE_2D,
-  //    0,
-  //    (int)GL_RGB,
-  //    id.w,
-  //    id.h,
-  //    0,
-  //    GL_RGB,
-  //    GL_FLOAT,
-  //    &id.data[0][0]);
-//
-  //glBegin(GL_QUADS);
-  ////lower left
-  //glTexCoord2f(0.0f, 0.0f);
-  //glVertex2f(left, bottom);
-  ////lower right
-  //glTexCoord2f(1.0f, 0.0f);
-  //glVertex2f(right, bottom);
-  ////upper right
-  //glTexCoord2f(1.0f, 1.0f);
-  //glVertex2f(right, top);
-  ////upper left
-  //glTexCoord2f(0.0f, 1.0f);
-  //glVertex2f(left, top);
-//
-  //glEnd();
+    if (textureID == 0)
+    {
+        CreateTexture();
+
+    }
+    if (textureID == 0)
+    {
+      return;
+    }
+
+  glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexSubImage2D(
+        GL_TEXTURE_2D,
+        0,
+        0,
+        0,
+        id.w,
+        id.h,
+        GL_RGB,
+        GL_FLOAT,
+        &id.data[0][0]
+    );
 }
 
 void Display::FinishDrawing()
 {
-  //glFlush();
-  //glfwSwapBuffers(window);
+  glFlush();
+  glfwSwapBuffers(window);
 }
 
 void Display::UpdateEvent()
@@ -114,6 +125,7 @@ void Display::SetRenderSize(ImageData &id)
 {
   render_width = id.w;
   render_height = id.h;
+  CreateTexture();
   CalcImageViewport();
 }
 
@@ -186,43 +198,70 @@ void Display::SetupWindow(int _w, int h)
   globalDisplay = this;
 
   // Setup window
-  //glfwSetErrorCallback(glfw_error_callback);
-  //if (!glfwInit())
-  //  return;
+  if (!glfwInit())
+  {
+      fprintf(stderr, "Failed to initialize GLFW\n");
+    return;
+  }
 
-  const char *glsl_version = "#version 130";
-  //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 
   // Create window with graphics context
-  //window = glfwCreateWindow(w, h, "EnvyTrace", NULL, NULL);
-  //if (window == NULL)
-  //  return;
-  //glfwMakeContextCurrent(window);
-  //glfwSwapInterval(1); // Enable vsync
+  window = glfwCreateWindow(w, h, "EnvyWebTrace", NULL, NULL);
+  if (window == NULL)
+  {
+      fprintf(stderr, "Failed to open GLFW window.\n");
+      glfwTerminate();
+      return;
+  }
 
-  //glfwSetWindowFocusCallback(window, ActiveFunc);
-  //glfwSetWindowSizeCallback(window, ReshapeFunc);
-  //glfwSetWindowCloseCallback(window, CloseFunc);
-  //glfwSetCursorPosCallback(window, MoveFunc);
-  //glfwSetMouseButtonCallback(window, ClickFunc);
+  glfwMakeContextCurrent(window);
+
+  glfwSwapInterval(1); // Enable vsync
+
+  glfwSetWindowFocusCallback(window, ActiveFunc);
+  glfwSetWindowSizeCallback(window, ReshapeFunc);
+  glfwSetWindowCloseCallback(window, CloseFunc);
+  glfwSetCursorPosCallback(window, MoveFunc);
+  glfwSetMouseButtonCallback(window, ClickFunc);
+  
+  
 
   ReshapeWindow(w, h);
 
-  // Setup Dear ImGui context
-  // IMGUI_CHECKVERSION();
-  // ImGui::CreateContext();
-  // ImGuiIO &io = ImGui::GetIO();
-  // (void)io;
-// 
-  // // Setup Dear ImGui style
-  // ImGui::StyleColorsDark();
-// 
-  // // Setup Platform/Renderer backends
-  // ImGui_ImplGlfw_InitForOpenGL(window, true);
-// 
-  // ImGui_ImplOpenGL3_Init(glsl_version);
-
   closed = false;
   active = true;
+
+
+}
+
+void Display::DestroyWindow()
+{
+  glfwDestroyWindow(globalDisplay->window);
+  glfwTerminate();
+}
+
+
+void Display::ClearWindow()
+{
+  int display_w, display_h;
+  glfwMakeContextCurrent(window);
+  glfwGetFramebufferSize(window, &display_w, &display_h);
+  glViewport(0, 0, display_w, display_h);
+  glClearColor(0.5f, 0.6f, 0.50f, 1.00f);
+  glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void Display::Finish()
+{
+  glfwMakeContextCurrent(window);
+}
+
+void Display::PollEvents()
+{
+  glfwPollEvents();
 }

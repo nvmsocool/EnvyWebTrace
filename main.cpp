@@ -7,8 +7,6 @@
 #define GLFW_INCLUDE_ES3
 #include "libs/Eigen/StdVector"
 #include "libs/Eigen_unsupported/Eigen/BVH" // For KdBVH
-#include <GLES3/gl3.h>
-#include <GLFW/glfw3.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -23,15 +21,8 @@
 #include "ImageData.h"
 #include "Shape.h"
 
-// Global variables - the window needs to be passed in to imgui
-GLFWwindow* g_window;
-
-// Global variables - these can be edited in the demo
-ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-bool show_demo_window = true;
-bool show_another_window = false;
-
-
+#include <thread>
+std::thread worker;
 
 
 ImageData image, preview;
@@ -48,7 +39,6 @@ std::string singleTrace;
 bool shouldReset = false;
 bool uiResized = false;
 bool isEnteringText = false;
-bool shouldReload = false;
 std::string sceneName;
 int tracer_mode;
 
@@ -66,6 +56,8 @@ std::list<float> msToWaitHistory;
 float totalFromMsHistory = 0;
 float previewRatio = 0.1f;
 float min_ratio;
+
+bool previewed_this_frame = false;
 
 //may return 0 when not able to detect
 //const auto processorCount = std::thread::hardware_concurrency();
@@ -110,7 +102,7 @@ void ReadScene()
 {
   std::vector<std::string> sceneLines = 
   {
-    "screen 800 600",
+    "screen 80 60",
     "camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000",
     "light 5.000000 5.000000 5.000000 ",
     "sphere 3.500000 -2.500000 0.500000 1.500000 ",
@@ -155,30 +147,22 @@ void ReadScene()
   }
 }
 
-void SetupScene()
-{
-  tracer->ClearAll();
-
-  //SaveCopy();
-
-  // Read the scene, calling scene.Command for each line.
-  ReadScene();
-
-  tracer->Finit();
-
-  display->SetupWindow(tracer->requested_width, tracer->requested_height);
-
-  // Allocate and clear an image array
-  ResizeImages();
-
-  ResetFPS();
-
-  tracer_mode = tracer->DefaultMode;
-}
-
 
 void DrawGUI()
 {
+
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::SetNextWindowSize(ImVec2((float)display->window_width-display->gui_width, (float)display->window_height));
+  ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
+  ImGui::Begin("Fractal Image", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
+  ImGui::Image(
+      (ImTextureID)(intptr_t)display->textureID,
+      ImVec2((float)display->window_width-display->gui_width, (float)display->window_height)
+  );
+  ImGui::End();
 
   ImGui::SetNextWindowSize(ImVec2((float)display->gui_width, (float)display->window_height));
   ImGui::SetNextWindowPos(ImVec2((float)(display->window_width - display->gui_width), 0.f));
@@ -349,59 +333,136 @@ void ResetTrace()
   traceDiff = 100;
 }
 
+void MainTrace()
+{
+  if (shouldReset)
+      {
+        image.Clear();
+
+        //this has to happen here due to the potentially different trace times that modes can result in
+        tracer->DefaultMode = static_cast<Tracer::TRACE_MODE>(tracer_mode);
+
+        // starting render, disable inputs
+        if (tracer->DefaultMode == Tracer::TRACE_MODE::FULL)
+        {
+          tracer->camera.controlsEnabled = false;
+          srand(427857);
+        }
+        shouldReset = false;
+      }
+
+      if (uiResized)
+      {
+        ResizeImages();
+        ResetTrace();
+        uiResized = false;
+      }
+
+      auto start_time = std::chrono::high_resolution_clock::now();
+      bool update_pass = (image.trace_num - 1) % 10 == 0;
+
+      float diff = tracer->TraceImage(image, update_pass, 1);
+      if (update_pass)
+        traceDiff = diff;
+
+      auto end_time = std::chrono::high_resolution_clock::now();
+      float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count());
+      traceDuration = ms / 1000000.f;
+}
+
 void loop()
 {
-  glfwPollEvents();
+  /*
+  
+  display->PollEvents();
 
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-
   DrawGUI();
 
   ImGui::Render();
 
-  int display_w, display_h;
-  glfwMakeContextCurrent(g_window);
-  glfwGetFramebufferSize(g_window, &display_w, &display_h);
-  glViewport(0, 0, display_w, display_h);
-  glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-  glClear(GL_COLOR_BUFFER_BIT);
+  
+  */
+
+  display->PollEvents();
+
+  auto start_time = std::chrono::high_resolution_clock::now();
+
+    if (!display->closed)
+    {
+      tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
+      MainTrace();
+      if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
+      {
+        float diff = tracer->TraceImage(preview, false, 1);
+        display->DrawArray(preview);
+        previewed_this_frame = true;
+      }
+      else
+      {
+        display->DrawArray(image);
+      }
+      DrawGUI();
+      display->FinishDrawing();
+    }
+
+    display->UpdateEvent();
+
+    if (display->clickRequest)
+    {
+      if (display->real_mouse_x < display->window_width - display->gui_width)
+        singleTrace = tracer->SinglePixelDebugTrace(image, display->mouse_x, display->mouse_y);
+      display->clickRequest = false;
+    }
+
+    if (display->active && !isEnteringText && tracer->camera.controlsEnabled)
+    {
+      if (tracer->camera.Update())
+        ResetTrace();
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+    float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count());
+
+    float ms_to_wait = std::max(0.f, maxMsToWait - ms);
+
+    guiFPS = 1000 / std::max(ms, maxMsToWait);
+
+    if (previewed_this_frame)
+    {
+      //negative->make smaller, 0->no change, 100->make bigger
+      totalFromMsHistory += ms_to_wait;
+      msToWaitHistory.push_back(ms_to_wait);
+      if (msToWaitHistory.size() > 100)
+      {
+        totalFromMsHistory -= msToWaitHistory.front();
+        msToWaitHistory.pop_front();
+      }
+      float avg_ms_to_wait = totalFromMsHistory / msToWaitHistory.size();
+      float ideal_ratio = std::max(min_ratio, std::min(1.f, avg_ms_to_wait / maxMsToWait));
+
+      //lerp to smooth variance
+      float suggested_ratio = (ideal_ratio + previewRatio) / 2;
+
+      //as # preview traces increases, stop caring about traces
+      if (std::abs(previewRatio - suggested_ratio) > 0.02f + 0.001f * (float)preview.trace_num)
+      {
+        previewRatio = suggested_ratio;
+        ResizePreview();
+      }
+      previewed_this_frame = false;
+    }
+
+    display->ClearWindow();
 
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-  glfwMakeContextCurrent(g_window);
-}
 
+  display->Finish();
 
-int init_gl()
-{
-  // init
-  if(!glfwInit())
-  {
-      fprintf(stderr, "Failed to initialize GLFW\n");
-      return 1;
-  }
-
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-
-  // window
-  // Open a window and create its OpenGL context.
-  // The window is created with minimal size,
-  // which will be updated with an automatic resize. 
-  // You could get the primary viewport size here to create.
-  g_window = glfwCreateWindow(1, 1, "WebGui Demo", NULL, NULL);
-  if (g_window == NULL)
-  {
-      fprintf(stderr, "Failed to open GLFW window.\n");
-      glfwTerminate();
-      return -1;
-  }
-  glfwMakeContextCurrent(g_window); // Initialize GLEW
-  return 0;
 }
 
 
@@ -410,8 +471,8 @@ int init_imgui()
   // Setup Dear ImGui binding
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGui_ImplGlfw_InitForOpenGL(g_window, true);
-  ImGui_ImplGlfw_InstallEmscriptenCallbacks(g_window, "#canvas");
+  ImGui_ImplGlfw_InitForOpenGL(display->window, true);
+  ImGui_ImplGlfw_InstallEmscriptenCallbacks(display->window, "#canvas");
   ImGui_ImplOpenGL3_Init("#version 300 es");
 
   // Setup style
@@ -432,15 +493,30 @@ int init_imgui()
 
 int init()
 {
-  init_gl();
-  init_imgui();
-
   tracer = new Tracer();
   display = new Display();
   
-  SetupScene();
+  tracer->ClearAll();
+
+  //SaveCopy();
+
+  // Read the scene, calling scene.Command for each line.
+  ReadScene();
+
+  tracer->Finit();
+
+  display->SetupWindow(tracer->requested_width, tracer->requested_height);
   
+  init_imgui();
+
+  // Allocate and clear an image array
+  ResizeImages();
+
+  ResetFPS();
+
   tracer->DefaultMode = Tracer::TRACE_MODE::DIFFUSE;
+  tracer_mode = tracer->DefaultMode;
+  
   return 0;
 }
 
@@ -451,8 +527,7 @@ void quit()
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  glfwDestroyWindow(g_window);
-  glfwTerminate();
+  display->DestroyWindow();
 
   delete tracer;
   delete display;
@@ -466,6 +541,8 @@ int main(int argc, char** argv)
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, 0, 1);
   #endif
+
+  worker.join();
 
   quit();
 

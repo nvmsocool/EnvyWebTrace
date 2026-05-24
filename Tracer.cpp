@@ -190,7 +190,7 @@ float Tracer::TraceImage(ImageData &id, bool update_pass, int n_threads)
   float weight = 1.f / static_cast<float>(id.trace_num);
   id.pixel_num = 0;
 
-#pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads) // Magic: Multi-thread y loop
+//#pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads) // Magic: Multi-thread y loop
   for (int y = 0; y < id.h; y++)
   {
 
