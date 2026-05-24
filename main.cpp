@@ -44,7 +44,6 @@ int tracer_mode;
 
 // gui variables/settings
 float traceDuration = 0;
-float traceDiff = 0;
 
 // fps vars
 float guiFPS = 0;
@@ -190,16 +189,16 @@ void DrawGUI()
 
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
-  ImGui::Text("%.3fs/trace, conv=%.4f", traceDuration, traceDiff);
+  ImGui::Text("%.3fs/trace, conv=%.4f", traceDuration, image.diff);
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
-  if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
-  {
-    ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
-    ImGui::Text("object: %s", tracer->info_name.data());
-    ImGui::Text("distance: %.4f", tracer->info_dist);
-    ImGui::Text("position: (%.2f, %.2f, %.2f)", tracer->info_pos[0], tracer->info_pos[1], tracer->info_pos[2]);
-    ImGui::Text(singleTrace.data());
-  }
+  //if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
+  //{
+  //  ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
+  //  ImGui::Text("object: %s", tracer->info_name.data());
+  //  ImGui::Text("distance: %.4f", tracer->info_dist);
+  //  ImGui::Text("position: (%.2f, %.2f, %.2f)", tracer->info_pos[0], tracer->info_pos[1], tracer->info_pos[2]);
+  //  ImGui::Text(singleTrace.data());
+  //}
 
   ImGui::BeginChild("settings");
 
@@ -224,6 +223,8 @@ void DrawGUI()
     };
     if (ImGui::Combo("render_type", &tracer_mode, items, 7, 4))
     {
+      image.nPathsPerTrace = 1;
+      preview.nPathsPerTrace = 1;
       ResetTrace();
     }
     if (ImGui::Checkbox("can_receive_input", &tracer->camera.controlsEnabled))
@@ -315,7 +316,6 @@ void ResetTrace()
 {
   shouldReset = true;
   preview.Clear();
-  traceDiff = 100;
   previewRatio = (float)preview.nPathsPerTrace * (maxFPS / (float)previewFPS) / (float)(tracer->requested_height * tracer->requested_width) ;
   ResizePreview();
 }
@@ -345,16 +345,8 @@ void MainTrace()
     uiResized = false;
   }
 
-  auto start_time = std::chrono::high_resolution_clock::now();
   bool update_pass = (image.trace_num - 1) % 10 == 0;
-
   float diff = tracer->TraceImage(image, update_pass, 1);
-  if (update_pass)
-    traceDiff = diff;
-
-  auto end_time = std::chrono::high_resolution_clock::now();
-  float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count());
-  traceDuration = ms / 1000000.f;
 }
 
 void loop()
