@@ -72,7 +72,7 @@ void ResetFileName(){}
 void ResizePreview()
 {
   preview.Resize(std::max(1,(int)(previewRatio * tracer->requested_width)), std::max(1,(int)(previewRatio * tracer->requested_height)));
-  previewRatio = (float)(preview.w + 1) / (float)image.w;
+  previewRatio = (float)(preview.w + 2) / (float)image.w;
 }
 
 void ResizeImage()
