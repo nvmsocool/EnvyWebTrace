@@ -227,10 +227,14 @@ float Tracer::TraceImage(ImageData &id, bool update_pass, int n_threads)
         if (update_pass)
         {
           id.diff /= id.data.size();
-          int ret = id.diff;
+          id.cachedDiff = id.diff;
           id.diff = 0;
-          return ret;
+          return id.cachedDiff;
         }
+        auto end_time = std::chrono::high_resolution_clock::now();
+        float ms = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end_time - id.start_time).count());
+        id.traceDuration = ms / 1000000.f;
+        id.start_time =  end_time;
       }
       y_add = id.currY * id.w;
     }

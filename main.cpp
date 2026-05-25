@@ -21,9 +21,6 @@
 #include "ImageData.h"
 #include "Shape.h"
 
-#include <thread>
-std::thread worker;
-
 
 ImageData image, preview;
 
@@ -42,14 +39,10 @@ bool isEnteringText = false;
 std::string sceneName;
 int tracer_mode;
 
-// gui variables/settings
-float traceDuration = 0;
-
 // fps vars
 float guiFPS = 0;
 int maxFPS = 90;
 int previewFPS = 10;
-float maxMsToWait;
 
 // preview vars
 std::list<float> msToWaitHistory;
@@ -92,11 +85,6 @@ void ResizeImages()
   ResizeImage();
   previewRatio = (float)preview.nPathsPerTrace * (maxFPS / (float)previewFPS) / (float)(tracer->requested_height * tracer->requested_width) ;
   ResizePreview();
-}
-
-void ResetFPS()
-{
-  maxMsToWait = 1000.f / (float)maxFPS;
 }
 
 // Read a scene file by parsing each line as a command and calling
@@ -189,7 +177,7 @@ void DrawGUI()
 
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
-  ImGui::Text("%.3fs/trace, conv=%.4f", traceDuration, image.diff);
+  ImGui::Text("%.3fs/trace, conv=%.4f", image.traceDuration, image.cachedDiff);
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
   //if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
   //{
@@ -231,8 +219,8 @@ void DrawGUI()
     {
       tracer->camera.PurgeKeys();
     }
-    if (ImGui::SliderInt("guiFPS", &maxFPS, 1, 120))
-      ResetFPS();
+    ImGui::SliderInt("guiFPS", &maxFPS, 1, 120);
+    ImGui::SliderInt("previewFPS", &previewFPS, 1, 120);
     //ImGui::SliderInt("threads", &numThreadsToUse, 1, processorCount);
     ImGui::Checkbox("isPaused", &tracer->isPaused);
 
@@ -467,8 +455,6 @@ int init()
   // Allocate and clear an image array
   ResizeImages();
 
-  ResetFPS();
-
   tracer->DefaultMode = Tracer::TRACE_MODE::DIFFUSE;
   tracer_mode = tracer->DefaultMode;
   
@@ -496,8 +482,6 @@ int main(int argc, char** argv)
   #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, 0, 1);
   #endif
-
-  worker.join();
 
   quit();
 

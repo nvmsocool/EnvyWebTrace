@@ -1,5 +1,6 @@
 #pragma once
 #include "Utilities.h"
+#include <chrono>
 
 struct ImageData
 {
@@ -15,7 +16,10 @@ struct ImageData
   float pctComplete;
   float pixel_num;
 
-  float diff;
+  float diff, cachedDiff;
+
+  float traceDuration = 0;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
   void Resize(int _w, int _h)
   {
@@ -34,5 +38,7 @@ struct ImageData
     currX = 0;
     currY = 0;
     diff = 0;
+    cachedDiff = 0;
+    start_time = std::chrono::high_resolution_clock::now();
   }
 };

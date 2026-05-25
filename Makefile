@@ -1,6 +1,6 @@
 CXX = emcc
 CXXFLAGS = -std=c++11 -Wall -w
-OUTPUT = imgui.js
+OUTPUT = envywebtrace.js
 IMGUI_DIR:=../imgui
 
 SOURCES = $(wildcard *.cpp)
