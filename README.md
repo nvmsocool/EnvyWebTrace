@@ -2,7 +2,7 @@
 
 EnvyWebTrace is a web port of the wildly popular [EnvyTrace](https://github.com/nvmsocool/EnvyTrace) software.
 
-See the [Live Demo](https://nvmsocool.github.io/EnvyWebTrace/envywebtrace.html) here.
+See the [Live Tool](https://nvmsocool.github.io/EnvyWebTrace/envywebtrace.html) here.
 
 Screenshot:
 
