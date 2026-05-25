@@ -455,7 +455,6 @@ int init()
   // Allocate and clear an image array
   ResizeImages();
 
-  tracer->DefaultMode = Tracer::TRACE_MODE::SIMPLE;
   tracer_mode = tracer->DefaultMode;
   
   return 0;
