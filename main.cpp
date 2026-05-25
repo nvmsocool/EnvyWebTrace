@@ -221,7 +221,6 @@ void DrawGUI()
     }
     ImGui::SliderInt("guiFPS", &maxFPS, 1, 120);
     ImGui::SliderInt("previewFPS", &previewFPS, 1, 120);
-    //ImGui::SliderInt("threads", &numThreadsToUse, 1, processorCount);
     ImGui::Checkbox("isPaused", &tracer->isPaused);
 
     ImGui::Unindent(16.0f);

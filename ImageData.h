@@ -40,5 +40,6 @@ struct ImageData
     diff = 0;
     cachedDiff = 0;
     start_time = std::chrono::high_resolution_clock::now();
+    pixel_num = 0;
   }
 };
