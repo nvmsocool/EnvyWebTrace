@@ -32,12 +32,12 @@ void Camera::SetProperties(Eigen::Quaternionf r, Eigen::Vector3f p, float _ry, f
 
 void Camera::Move(Eigen::Vector3f p)
 {
-  position += rotation._transformVector(p * speedMove);
+  position += rotation._transformVector(p);
 }
 
 void Camera::Rotate(Eigen::Vector3f r)
 {
-  rotation *= EulerToQuat(r * speedRot);
+  rotation *= EulerToQuat(r);
   displayRotation = QuatToEuler(rotation);
   ResetViews();
 }
@@ -74,7 +74,7 @@ bool Camera::Update()
   {
     if (IsKeyDown(m.first))
     {
-      Move(m.second);
+      Move(m.second * speedMove);
       camera_moved = true;
     }
   }
@@ -83,11 +83,63 @@ bool Camera::Update()
   {
     if (IsKeyDown(r.first))
     {
-      Rotate(r.second);
+      Rotate(r.second * speedRot);
       camera_moved = true;
     }
   }
 
+  return camera_moved;
+}
+
+bool Camera::UpdateMouse()
+{
+  bool camera_moved = false;
+
+  // mouse over image, do mouse contrtol stuff
+  float wheel = ImGui::GetIO().MouseWheel;
+  if (wheel != 0.0f)
+  {
+    //rx = ry * w / h;
+    float fakew = rx / ry;
+    ry -= wheel * speedZoomMouse;
+    UpdateFOV(fakew, 1);
+    camera_moved = true;
+  }
+
+  ImVec2 delta = ImGui::GetIO().MouseDelta;
+
+  float dx = delta.x;
+  float dy = delta.y;
+
+  bool shiftHeld =
+    ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
+    ImGui::IsKeyDown(ImGuiKey_RightShift);
+
+  if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+  {
+    camera_moved |= dx != 0 || dy != 0;
+    // pan
+    Move((Eigen::Vector3f(-1, 0, 0) * dx + Eigen::Vector3f(0, -1, 0) * dy) * speedMoveMouse);
+
+    if (shiftHeld)
+    {
+      // dolly
+      Move(dy * Eigen::Vector3f(0, 0, 1) * speedMoveMouse);
+    }
+  }
+  
+  if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+  {
+    camera_moved |= dx != 0 || dy != 0;
+    // pitch/yaw
+    Rotate((Eigen::Vector3f(0, 1, 0) * dx + Eigen::Vector3f(-1, 0, 0) * dy) * speedRotMouse);
+
+    if(shiftHeld)
+    {
+      //roll
+      Rotate(dx * Eigen::Vector3f(0, 0, 1) * speedRotMouse);
+    }
+  }
   return camera_moved;
 }
 

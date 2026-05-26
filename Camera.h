@@ -20,6 +20,12 @@ public:
   //camera movement settings
   float speedMove = 0.01f;
   float speedRot = 2.f;
+
+  float speedMoveMouse = 1.f;
+  float speedRotMouse = 1.f;
+  float speedZoomMouse = 1.f;
+
+
   bool controlsEnabled = true;
 
   // depth of field settings
@@ -33,6 +39,7 @@ public:
   std::string GetCameraString();
   void UpdateFOV(float w, float h);
   bool Update();
+  bool UpdateMouse();
   void PurgeKeys();
 
 private:

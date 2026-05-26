@@ -166,6 +166,11 @@ void DrawGUI()
       ImVec2(0, 0),
       end
   );
+  if (ImGui::IsItemHovered())
+  {
+      if (tracer->camera.UpdateMouse())
+        ResetTrace();
+  }
   ImGui::End();
   
   ImGui::PopStyleVar();
@@ -243,6 +248,11 @@ void DrawGUI()
 
     ImGui::DragFloat("move_speed", &tracer->camera.speedMove, 0.01f);
     ImGui::DragFloat("rot_speed", &tracer->camera.speedRot, 0.01f);
+    ImGui::DragFloat("move_speed", &tracer->camera.speedMove, 0.01f);
+    ImGui::DragFloat("rot_speed_mouse", &tracer->camera.speedRotMouse, 0.01f);
+    ImGui::DragFloat("move_speed_mouse", &tracer->camera.speedMoveMouse, 0.01f);
+    ImGui::DragFloat("zoom_speed_mouse", &tracer->camera.speedZoomMouse, 0.01f);
+
     if (ImGui::Checkbox("use_AA", &tracer->use_AA))
     {
       ResetTrace();
