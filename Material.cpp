@@ -60,7 +60,7 @@ bool Light::RenderGUI(size_t shape_num)
   if (ImGui::CollapsingHeader("light material"))
   {
     ImGui::Indent(10.f);
-    something_changed |= ImGui::DragFloat3((std::string("light val##") + std::to_string(shape_num)).data(), light_value.data(), 0.1f, 0, 1000000, "%.1f");
+    something_changed |= ImGui::DragFloat3((std::string("light_val##light_val") + std::to_string(shape_num)).data(), light_value.data(), 0.1f, 0, 1000000, "%.1f");
     something_changed |= Material::RenderGUI(shape_num);
     ImGui::Unindent(10.f);
   }
@@ -85,9 +85,9 @@ bool Material::RenderGUI(size_t shape_num)
   if (ImGui::CollapsingHeader("material"))
   {
     ImGui::Indent(10.f);
-    something_changed |= ImGui::SliderFloat3((std::string("Kd##") + std::to_string(shape_num)).data(), Kd.data(), 0, 1, "%.2f");
-    something_changed |= ImGui::SliderFloat3((std::string("Ks##") + std::to_string(shape_num)).data(), Ks.data(), 0, 1, "%.2f");
-    something_changed |= ImGui::SliderFloat((std::string("specularity##") + std::to_string(shape_num)).data(), &specularity, 0, 1, "%.2f");
+    something_changed |= ImGui::SliderFloat3((std::string("Kd##kd") + std::to_string(shape_num)).data(), Kd.data(), 0, 1, "%.2f");
+    something_changed |= ImGui::SliderFloat3((std::string("Ks##ks") + std::to_string(shape_num)).data(), Ks.data(), 0, 1, "%.2f");
+    something_changed |= ImGui::SliderFloat((std::string("specularity##spec") + std::to_string(shape_num)).data(), &specularity, 0, 1, "%.2f");
     ImGui::Unindent(10.f);
   }
 

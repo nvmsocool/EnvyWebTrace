@@ -42,7 +42,7 @@ int tracer_mode;
 // fps vars
 float guiFPS = 0;
 int maxFPS = 90;
-int previewFPS = 10;
+int previewFPS = 5;
 
 // preview vars
 std::list<float> msToWaitHistory;
@@ -139,6 +139,8 @@ void ReadScene()
 }
 
 int pW = 1, pH = 1;
+bool fullscreen = true;
+bool tooltips = true;
 
 void DrawGUI()
 {
@@ -155,19 +157,51 @@ void DrawGUI()
 
   ImGui::Begin("Image", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
   ImVec2 end = ImVec2(1,1);
+  float w = tracer->halfDome ? image.w * 2 : image.w;
   if (previewed_this_frame)
   {
-    end = ImVec2((float)pW/(float)image.w, (float)pH/(float)image.h);
+    end = ImVec2((float)(tracer->halfDome ? pW * 2 : pW)/w, (float)pH/(float)image.h);
   }
-  ImGui::SetCursorPos(ImVec2((float)(display->window_width-display->gui_width-image.w)/2.f, (float)(display->window_height-image.h)/2.f));
+
+  ImVec2 displaySize = ImVec2(w, (float)image.h);
+  if (fullscreen)
+  {
+    float imageAspect = w/(float)image.h;
+    float containerWidth = (float)(display->window_width - display->gui_width);
+    float containerAspect = containerWidth / (float)display->window_height;
+    float scaledWidth;
+    float scaledHeight;
+
+    // Image is wider than container
+    if (imageAspect > containerAspect)
+    {
+        scaledWidth = containerWidth;
+        scaledHeight = (float)display->window_width / imageAspect;
+    }
+    else
+    {
+        // Image is taller than container
+        scaledHeight = (float)display->window_height;
+        scaledWidth = (float)display->window_height * imageAspect;
+    }
+    
+    displaySize = ImVec2(scaledWidth, scaledHeight);
+    ImGui::SetCursorPos(ImVec2((containerWidth - scaledWidth) * 0.5f, ((float)display->window_height - scaledHeight) * 0.5f));
+  }
+  else
+  {
+    ImGui::SetCursorPos(ImVec2((float)(display->window_width-display->gui_width-w) * 0.5f, (float)(display->window_height-image.h) * 0.5f));
+  }
+
   ImGui::Image(
       (ImTextureID)(intptr_t)display->textureID,
-      ImVec2((float)image.w, (float)image.h),
+      displaySize,
       ImVec2(0, 0),
       end
   );
-  if (ImGui::IsItemHovered())
+  if (ImGui::IsItemHovered() && display->active && tracer->camera.controlsEnabled)
   {
+      tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
       if (tracer->camera.UpdateMouse())
         ResetTrace();
   }
@@ -183,7 +217,11 @@ void DrawGUI()
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
   ImGui::Text("%.3fs/trace, conv=%.4f", image.traceDuration, image.cachedDiff);
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("how long each trace takes, and how close it is to converging.");
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("how many paths are traced each GUI update.");
   //if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
   //{
   //  ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
@@ -205,6 +243,9 @@ void DrawGUI()
     {
       uiResized = true;
     }
+    ImGui::Checkbox("fullscreen_preview", &fullscreen);
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("View rendered image blown up in the GUI");
     const char *items[] = {
       "FULL",
       "NORMAL",
@@ -220,13 +261,15 @@ void DrawGUI()
       preview.nPathsPerTrace = 1;
       ResetTrace();
     }
-    if (ImGui::Checkbox("can_receive_input", &tracer->camera.controlsEnabled))
-    {
-      tracer->camera.PurgeKeys();
-    }
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Render technique used for image");
     ImGui::SliderInt("guiFPS", &maxFPS, 1, 120);
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Target FPS of the GUI");
     ImGui::SliderInt("previewFPS", &previewFPS, 1, 120);
-    ImGui::Checkbox("isPaused", &tracer->isPaused);
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("ttarget FPS for the preview image. Smaller = more detailed image while dragging sliders");
+    ImGui::Checkbox("pause##isPaused", &tracer->isPaused);
 
     ImGui::Unindent(16.0f);
   }
@@ -234,33 +277,37 @@ void DrawGUI()
   {
     ImGui::Indent(16.0f);
 
-    if (ImGui::DragFloat3("cam_pos", tracer->camera.position.data(), 0.01f, -10000, 10000, "%.3f"))
+    if (ImGui::DragFloat3("position##cam_pos", tracer->camera.position.data(), 0.01f, -10000, 10000, "%.3f"))
     {
       tracer->camera.ResetViews();
       ResetTrace();
     }
-    if (ImGui::DragFloat3("cam_rot", tracer->camera.displayRotation.data(), 0.01f, -180, 180, "%.3f"))
+    if (ImGui::DragFloat3("rotation##cam_rot", tracer->camera.displayRotation.data(), 0.01f, -180, 180, "%.3f"))
     {
       tracer->camera.rotation = EulerToQuat(tracer->camera.displayRotation);
       tracer->camera.ResetViews();
       ResetTrace();
     }
+    if (ImGui::DragFloat("fov", &tracer->camera.ry, 0.01f, 0.01f, 1.0f, "%.2f"))
+    {
+      tracer->camera.UpdateFOV((float)image.w, (float)image.h);
+      ResetTrace();
+    }
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Field of view, aka zoom");
 
-    ImGui::DragFloat("move_speed", &tracer->camera.speedMove, 0.01f);
-    ImGui::DragFloat("rot_speed", &tracer->camera.speedRot, 0.01f);
-    ImGui::DragFloat("move_speed", &tracer->camera.speedMove, 0.01f);
-    ImGui::DragFloat("rot_speed_mouse", &tracer->camera.speedRotMouse, 0.01f);
-    ImGui::DragFloat("move_speed_mouse", &tracer->camera.speedMoveMouse, 0.01f);
-    ImGui::DragFloat("zoom_speed_mouse", &tracer->camera.speedZoomMouse, 0.01f);
-
-    if (ImGui::Checkbox("use_AA", &tracer->use_AA))
+    if (ImGui::Checkbox("AA##use_AA", &tracer->use_AA))
     {
       ResetTrace();
     }
-    if (ImGui::Checkbox("depth_of_field", &tracer->depth_of_field))
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Anti-Aliasing, for smoother edges");
+    if (ImGui::Checkbox("DOF##depth_of_field", &tracer->depth_of_field))
     {
       ResetTrace();
     }
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("A tilt-shift effect, making near ground and background blurry");
     if (tracer->depth_of_field)
     {
       ImGui::Indent(10.f);
@@ -274,21 +321,65 @@ void DrawGUI()
     {
       ResetTrace();
     }
-    if (ImGui::DragFloat("fov", &tracer->camera.ry, 0.01f, 0.01f, 1.0f, "%.2f"))
-    {
-      tracer->camera.UpdateFOV((float)image.w, (float)image.h);
-      ResetTrace();
-    }
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Will render a side-by-side half dome for binocular viewing in VR");
 
     ImGui::Unindent(16.0f);
   }
-  if (ImGui::CollapsingHeader("shapes"))
+  if (ImGui::CollapsingHeader("input"))
+  {
+    if (ImGui::Checkbox("can_receive_input", &tracer->camera.controlsEnabled))
+    {
+      tracer->camera.PurgeKeys();
+    }
+    if (tooltips && ImGui::IsItemHovered()) 
+        ImGui::SetTooltip("Disable to prevent accidental trace resets");
+    ImGui::Indent(16.0f);
+    ImGui::Text("Keyboard Input Speed");
+    ImGui::DragFloat("movement##move_speed", &tracer->camera.speedMove, 0.01f);
+    ImGui::DragFloat("rotation##rot_speed", &tracer->camera.speedRot, 0.01f);
+    ImGui::Text("Mouse Input Speed");
+    ImGui::DragFloat("rotation##rot_speed_mouse", &tracer->camera.speedRotMouse, 0.01f);
+    ImGui::DragFloat("movement##move_speed_mouse", &tracer->camera.speedMoveMouse, 0.01f);
+    ImGui::DragFloat("zoom##zoom_speed_mouse", &tracer->camera.speedZoomMouse, 0.01f);
+
+    ImGui::Unindent(16.0f);
+  }
+  if (ImGui::CollapsingHeader("fractals"))
   {
     ImGui::Indent(16.0f);
 
     for (size_t i = 0; i < tracer->objects_p.size(); i++)
     {
-      if (tracer->objects_p[i]->RenderGenericGUI(i))
+      if (dynamic_cast<Fractal*>(tracer->objects_p[i]) && tracer->objects_p[i]->RenderGenericGUI(i))
+      {
+        ResetTrace();
+      }
+    }
+
+    ImGui::Unindent(16.0f);
+  }
+  if (ImGui::CollapsingHeader("lights"))
+  {
+    ImGui::Indent(16.0f);
+
+    for (size_t i = 0; i < tracer->objects_p.size(); i++)
+    {
+      if (!dynamic_cast<Fractal*>(tracer->objects_p[i]) && tracer->objects_p[i]->material->isLight() && tracer->objects_p[i]->RenderGenericGUI(i))
+      {
+        ResetTrace();
+      }
+    }
+
+    ImGui::Unindent(16.0f);
+  }
+  if (ImGui::CollapsingHeader("other objects"))
+  {
+    ImGui::Indent(16.0f);
+
+    for (size_t i = 0; i < tracer->objects_p.size(); i++)
+    {
+      if (!dynamic_cast<Fractal*>(tracer->objects_p[i]) && !tracer->objects_p[i]->material->isLight() && tracer->objects_p[i]->RenderGenericGUI(i))
       {
         ResetTrace();
       }
@@ -352,27 +443,28 @@ void loop()
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
-      previewed_this_frame = false;
-
   if (!display->closed)
   {
-    tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
-    MainTrace();
-    if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
+    if (!tracer->isPaused)
     {
-      previewed_this_frame = true;
-      float diff = tracer->TraceImage(preview, false, 1);
-      if (preview.trace_num > 1)
+      previewed_this_frame = false;
+      MainTrace();
+      if ((image.trace_num < 2 && tracer->DefaultMode != Tracer::TRACE_MODE::FULL) || shouldReset)
       {
-        display->DrawArray(preview);
-        pW = preview.w;
-        pH = preview.h;
-        ResizePreview();
+        previewed_this_frame = true;
+        float diff = tracer->TraceImage(preview, false, 1);
+        if (preview.trace_num > 1)
+        {
+          display->DrawArray(preview);
+          pW = preview.w;
+          pH = preview.h;
+          ResizePreview();
+        }
       }
-    }
-    else
-    {
-      display->DrawArray(image);
+      else
+      {
+        display->DrawArray(image);
+      }
     }
     DrawGUI();
     display->FinishDrawing();

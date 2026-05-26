@@ -96,9 +96,9 @@ bool Cylinder::RenderGUI(size_t i)
   Eigen::Vector3f Base, Axis;
   float radius;
 
-  changed |= ImGui::DragFloat3((std::string("Base##") + std::to_string(i)).data(), Base.data(), 0.01f, -10000, 10000, "%.2f");
-  changed |= ImGui::DragFloat3((std::string("Axis##") + std::to_string(i)).data(), Axis.data(), 0.01f, -10000, 10000, "%.2f");
-  changed |= ImGui::DragFloat((std::string("Radius##") + std::to_string(i)).data(), &radius, 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat3((std::string("Base##cb") + std::to_string(i)).data(), Base.data(), 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat3((std::string("Axis##ca") + std::to_string(i)).data(), Axis.data(), 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat((std::string("Radius##cr") + std::to_string(i)).data(), &radius, 0.01f, -10000, 10000, "%.2f");
 
   if (changed)
   {

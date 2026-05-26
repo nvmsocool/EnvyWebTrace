@@ -48,8 +48,8 @@ void Box::ResetSettings()
 bool Box::RenderGUI(size_t i)
 {
   bool changed = false;
-  changed |= ImGui::DragFloat3((std::string("base##") + std::to_string(i)).data(), base.data(), 0.01f, -10000, 10000, "%.2f");
-  changed |= ImGui::DragFloat3((std::string("radius##") + std::to_string(i)).data(), extents.data(), 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat3((std::string("base##bb") + std::to_string(i)).data(), base.data(), 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat3((std::string("radius##br") + std::to_string(i)).data(), extents.data(), 0.01f, -10000, 10000, "%.2f");
 
   if (changed)
   {

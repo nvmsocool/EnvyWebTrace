@@ -118,26 +118,32 @@ bool Camera::UpdateMouse()
   if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
   {
     camera_moved |= dx != 0 || dy != 0;
-    // pan
-    Move((Eigen::Vector3f(-1, 0, 0) * dx + Eigen::Vector3f(0, -1, 0) * dy) * speedMoveMouse);
 
     if (shiftHeld)
     {
       // dolly
       Move(dy * Eigen::Vector3f(0, 0, 1) * speedMoveMouse);
     }
+    else
+    {
+      // pan
+      Move((Eigen::Vector3f(-1, 0, 0) * dx + Eigen::Vector3f(0, -1, 0) * dy) * speedMoveMouse);
+    }
   }
   
   if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
   {
     camera_moved |= dx != 0 || dy != 0;
-    // pitch/yaw
-    Rotate((Eigen::Vector3f(0, 1, 0) * dx + Eigen::Vector3f(-1, 0, 0) * dy) * speedRotMouse);
 
     if(shiftHeld)
     {
       //roll
       Rotate(dx * Eigen::Vector3f(0, 0, 1) * speedRotMouse);
+    }
+    else
+    {
+      // pitch/yaw
+      Rotate((Eigen::Vector3f(0, 1, 0) * dx + Eigen::Vector3f(-1, 0, 0) * dy) * speedRotMouse);
     }
   }
   return camera_moved;

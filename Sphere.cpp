@@ -59,8 +59,8 @@ void Sphere::ResetSettings()
 bool Sphere::RenderGUI(size_t i)
 {
   bool changed = false;
-  changed |= ImGui::DragFloat((std::string("radius##") + std::to_string(i)).data(), &Radius, 0.1f, 0.0f, 10000.f, "%.1");
-  changed |= ImGui::DragFloat3((std::string("radius##") + std::to_string(i)).data(), Center.data(), 0.01f, -10000, 10000, "%.2f");
+  changed |= ImGui::DragFloat((std::string("radius##sr") + std::to_string(i)).data(), &Radius, 0.1f, 0.0f, 10000.f, "%.1");
+  changed |= ImGui::DragFloat3((std::string("center##sc") + std::to_string(i)).data(), Center.data(), 0.01f, -10000, 10000, "%.2f");
 
   if (changed)
   {

@@ -21,9 +21,9 @@ public:
   float speedMove = 0.01f;
   float speedRot = 2.f;
 
-  float speedMoveMouse = 1.f;
-  float speedRotMouse = 1.f;
-  float speedZoomMouse = 1.f;
+  float speedMoveMouse = 0.001f;
+  float speedRotMouse = 0.05f;
+  float speedZoomMouse = 0.03f;
 
 
   bool controlsEnabled = true;
