@@ -491,16 +491,19 @@ void loop()
 
   guiFPS = 1000 / ms;
 
-  // do this smarter
-  if (guiFPS > maxFPS)
+  if (!tracer->isPaused)
   {
-    image.nPathsPerTrace++;
-    preview.nPathsPerTrace++;
-  }
-  else if (image.nPathsPerTrace > 1)
-  {
-    image.nPathsPerTrace--;
-    preview.nPathsPerTrace--;
+    // do this smarter
+    if (guiFPS > maxFPS)
+    {
+      image.nPathsPerTrace++;
+      preview.nPathsPerTrace++;
+    }
+    else if (image.nPathsPerTrace > 1)
+    {
+      image.nPathsPerTrace--;
+      preview.nPathsPerTrace--;
+    }
   }
 
   display->ClearWindow();
