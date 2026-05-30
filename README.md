@@ -6,9 +6,9 @@ See the [Live Tool](https://nvmsocool.github.io/EnvyWebTrace/envywebtrace.html) 
 
 Screenshot:
 
-<img src="screenshot.png"></img>
-<img src="screenshot2.png"></img>
-<img src="screenshot3.png"></img>
+<img src="screenshot.png">
+<img src="screenshot2.png">
+<img src="screenshot3.png">
 
 Big thanks to jnmaloney's great repo [WebGUI](https://github.com/jnmaloney/WebGui) for the template on how to get an Emscripted app up and running!
 
