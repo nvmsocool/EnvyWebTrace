@@ -293,17 +293,18 @@ void DrawGUI()
   float localX = std::min((float)image.w, std::max(0.f, (mousePos.x - imagePos.x) * (float)image.w / (imageEnd.x - imagePos.x)));
   float localY = (float)image.h -  std::min((float)image.h, std::max(0.f, (mousePos.y - imagePos.y) * (float)image.h / (imageEnd.y - imagePos.y)));
 
-  if (ImGui::IsItemHovered() && display->active && tracer->camera.controlsEnabled)
+  if (ImGui::IsItemHovered() && display->active)
   {
-
       tracer->SinglePixelInfoTrace(image, localX, localY);
       if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
       {
         singleTrace = tracer->SinglePixelDebugTrace(image, localX, localY);
       }
-
+      if (tracer->camera.controlsEnabled)
+      {
       if (tracer->camera.UpdateMouse())
         ResetTrace();
+      }
   }
   ImGui::End();
   
