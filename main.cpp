@@ -14,6 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <map>
 
 #include "Tracer.h"
 #include "Display.h"
@@ -28,7 +29,9 @@ ImageData image, preview;
 Tracer *tracer;
 Display *display;
 std::vector<char> baseNameArr(255);
+std::string userSceneText = "";
 std::string baseName, bmpName, gifName;
+std::string selectedPreset = "Tentacle";
 
 std::string singleTrace;
 
@@ -87,36 +90,82 @@ void ResizeImages()
   ResizePreview();
 }
 
-static std::vector<std::string> presets = 
+static std::map<std::string, std::string> presets = 
 {
-  {},
+  { "Tentacle",
+R"(screen 800 600
+camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000
+light 5.000000 5.000000 5.000000
+sphere 3.500000 -2.500000 0.500000 1.500000
+brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000
+fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 2.0 1000 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
+box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000
+box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
+box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000
+box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
+box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000
+box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000)"
+  },
+  { "Menger",
+R"(screen 800 600
+camera 3.740533 3.235876 -0.310159 0.410000 79.603683 124.465317 -176.227631 0.002000 0.212000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000 
+box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000 
+brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 
+fractal 0.000000 0.000000 0.000000 3.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 0.0 10000 0 1.000000 0.000000 0.000000 0 0.000000 1.000000 0.000000 0 0.000000 0.000000 1.000000 0 1.000000 0.000000 -1.000000 0 0.000000 1.000000 -1.000000 0 1.000000 -1.000000 0.000000 3 0.000000 0.000000 -0.333333 0 0.000000 0.000000 1.000000 2 1.000000 1.000000 -1.000000 3 0.000000 0.000000 0.333333 2 3.000000 3.000000 3.000000 3 -2.000000 -2.000000 0.000000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 
+box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 
+light 5.000000 5.000000 5.000000 
+sphere 3.500000 -2.500000 0.500000 1.500000)"
+  },
+  { "Sierpinski",
+R"(screen 800 600
+camera 4.248725 2.256079 1.383799 0.080000 116.052422 120.473274 139.612091 0.002000 0.212000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000 
+box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000 
+brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 
+fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 2.000000 1000.000000 0 1.000000 1.000000 0.000000 0 0.000000 1.000000 1.000000 0 1.000000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 
+box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 
+light 5.000000 5.000000 5.000000 
+sphere 3.500000 -2.500000 0.500000 1.500000 )"
+  },
 };
+
+
+EM_JS(void, CopyToClipboard, (const char* str), {
+    const text = UTF8ToString(str);
+
+    if (Module.canvas)
+        Module.canvas.focus();
+
+    navigator.clipboard.writeText(text)
+        .catch(err =>
+            console.error("clipboard failed", err));
+});
 
 // Read a scene file by parsing each line as a command and calling
 // scene->Command(...) with the results.
-void ReadScene()
+void ReadScene(std::string s)
 {
-  std::vector<std::string> sceneLines = 
-  {
-    "screen 800 600",
-    "camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000",
-    "light 5.000000 5.000000 5.000000 ",
-    "sphere 3.500000 -2.500000 0.500000 1.500000 ",
-    "brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 ",
-    "fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 2.0 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 ",
-    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
-    "box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 ",
-    "box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 ",
-    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
-    "box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 ",
-    "box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 ",
-    "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
-    "box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000 ",
-    "box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000 "
-  };
+  std::stringstream ss(s);
 
-  // For each line in file
-  for (const std::string& line : sceneLines)
+  std::string line;
+
+  while (std::getline(ss, line))
   {
     std::vector<std::string> strings;
     std::vector<float> floats;
@@ -143,6 +192,36 @@ void ReadScene()
   }
 }
 
+void PrintScene()
+{
+    userSceneText.clear();
+    userSceneText += "screen " + std::to_string(image.w) + " " + std::to_string(image.h) + "\n";
+    userSceneText += tracer->camera.GetCameraString() + "\n";
+    for (auto m : tracer->shapes_by_material)
+    {
+      userSceneText += m.first->Serialize() + "\n";
+      for (auto s : m.second)
+      {
+        userSceneText += s->Serialize() + "\n";
+      }
+    }
+}
+
+void ReloadScene(std::string s)
+{
+  tracer->ClearAll();
+  ReadScene(s);
+  tracer->Finit();
+  ResizeImages();
+  tracer_mode = tracer->DefaultMode;
+  ResetTrace();
+}
+
+void LoadUserScene()
+{
+  ReadScene(userSceneText);
+}
+
 int pW = 1, pH = 1;
 bool fullscreen = true;
 bool tooltips = true;
@@ -161,6 +240,7 @@ void DrawGUI()
   ImGui::SetNextWindowPos(ImVec2(0,0));
 
   ImGui::Begin("Image", NULL, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize); // Create a window called "Hello, world!" and append into it.
+  
   ImVec2 end = ImVec2(1,1);
   float w = tracer->halfDome ? image.w * 2 : image.w;
   if (previewed_this_frame)
@@ -242,7 +322,7 @@ void DrawGUI()
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
   if (tooltips && ImGui::IsItemHovered()) 
       ImGui::SetTooltip("how many paths are traced each GUI update.");
-  if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
+  if (ImGui::CollapsingHeader("debug info", ImGuiTreeNodeFlags_DefaultOpen))
   {
     ImGui::Text("pos: (%d,%d)", (int)localX, (int)localY);
     ImGui::Text("object: %s", tracer->info_name.data());
@@ -256,6 +336,8 @@ void DrawGUI()
 
   ImGui::BeginChild("settings");
 
+  
+
   if (ImGui::CollapsingHeader("tracer settings"))
   {
     ImGui::Indent(16.0f);
@@ -264,7 +346,8 @@ void DrawGUI()
     size_changed |= ImGui::InputInt("height##image_height", &tracer->requested_height);
     if (size_changed)
     {
-      uiResized = true;
+      ResizeImages();
+      ResetTrace();
     }
     ImGui::Checkbox("fullscreen_preview", &fullscreen);
     if (tooltips && ImGui::IsItemHovered()) 
@@ -295,6 +378,47 @@ void DrawGUI()
     ImGui::Checkbox("pause##isPaused", &tracer->isPaused);
 
     ImGui::Unindent(16.0f);
+  }
+  if (ImGui::CollapsingHeader("scene"))
+  {
+    //load preset
+
+    if (selectedPreset.empty() && !presets.empty())
+    {
+        selectedPreset = presets.begin()->first;
+    }
+
+    const char* previewText = selectedPreset.c_str();
+
+    if (ImGui::BeginCombo("Preset", previewText))
+    {
+        for (const auto& pair : presets)
+        {
+            const std::string& key = pair.first;
+            bool isSelected = (selectedPreset == key);
+            if (ImGui::Selectable(key.c_str(), isSelected))
+            {
+                selectedPreset = key;
+                // callback
+                userSceneText = presets[key];
+                ReloadScene(presets[key]);
+                ResetTrace();
+            }
+
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+
+    if (ImGui::Button("copy_scene"))
+    {
+      PrintScene();
+      CopyToClipboard(userSceneText.c_str());
+    }
   }
   if (ImGui::CollapsingHeader("camera settings"))
   {
@@ -407,6 +531,7 @@ void DrawGUI()
         ResetTrace();
       }
     }
+    
 
     ImGui::Unindent(16.0f);
   }
@@ -429,6 +554,7 @@ void ResetTrace()
   preview.Clear();
   previewRatio = (float)preview.nPathsPerTrace * (maxFPS / (float)previewFPS) / (float)(tracer->requested_height * tracer->requested_width) ;
   ResizePreview();
+  userSceneText = "";
 }
 
 void MainTrace()
@@ -447,13 +573,6 @@ void MainTrace()
       srand(427857);
     }
     shouldReset = false;
-  }
-
-  if (uiResized)
-  {
-    ResizeImages();
-    ResetTrace();
-    uiResized = false;
   }
 
   bool update_pass = (image.trace_num - 1) % 10 == 0;
@@ -564,7 +683,7 @@ int init()
   tracer->ClearAll();
 
   // Read the scene, calling scene.Command for each line.
-  ReadScene();
+  ReadScene(presets["Tentacle"]);
 
   tracer->Finit();
 
@@ -576,6 +695,8 @@ int init()
   ResizeImages();
 
   tracer_mode = tracer->DefaultMode;
+  
+  userSceneText.reserve(4096);
   
   return 0;
 }
@@ -596,6 +717,7 @@ void quit()
 
 int main(int argc, char** argv)
 {
+  
   if (init() != 0) return 1;
 
   #ifdef __EMSCRIPTEN__

@@ -39,6 +39,7 @@ void Tracer::ClearAll()
   materials.reserve(100);
   lights.clear();
   lights.reserve(100);
+  shapes_by_material.clear();
 }
 
 void Tracer::Command(const std::vector<std::string> &strings,
