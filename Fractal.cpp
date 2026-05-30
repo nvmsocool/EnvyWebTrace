@@ -92,6 +92,7 @@ bool Fractal::RenderGUI(size_t n)
   }
   something_changed |= ImGui::DragFloat((std::string("scale##") + std::to_string(n)).data(), &Scale, 0.001f, 0, 100000, "%.3f");
   something_changed |= ImGui::DragFloat((std::string("itsub##") + std::to_string(n)).data(), &ItSub, 0.001f, 0, 100000, "%.3f");
+  something_changed |= ImGui::DragFloat((std::string("bailout##") + std::to_string(n)).data(), &Bailout, 0.001f, 0, 100000, "%.3f");
   if (ImGui::DragFloat3((std::string("rotation##") + std::to_string(n)).data(), &rot_eulers[0], 0.1f, -180, 180, "%.1f"))
   {
     something_changed = true;
@@ -236,7 +237,7 @@ std::string Fractal::Serialize()
 {
   std::string ret = "fractal ";
   /*
-    # fractal parameters: pos scale rotation step_iterations num_subdivisions min_distance {options}
+    # fractal parameters: pos scale rotation step_iterations num_subdivisions min_distance itsub {options}
   # options will be read and applied in order
   # options: fold 0 (normal vector), rotate 1 (euler angles), scale 2 (scale factors), translate 3(translation amt)
   fractal 0 0 0     2     0 0 0     100 11 0.0001   0  1 0 0    0  0 1 0    0  0 0 1    0  1 -1 0
@@ -254,6 +255,8 @@ std::string Fractal::Serialize()
   ret += std::to_string(max_iteration) + " ";
   ret += std::to_string(num_subdivisions) + " ";
   ret += std::to_string(min_distance) + " ";
+  ret += std::to_string(ItSub) + " ";
+  ret += std::to_string(Bailout) + " ";
 
   //actions
   for (auto a : CombinedActions)
@@ -298,7 +301,7 @@ std::string Fractal::Serialize()
 
 Shape *Fractal::Clone()
 {
-  Fractal *fr = new Fractal(Scale, ItSub, Center, rot, material);
+  Fractal *fr = new Fractal(Scale, ItSub, Bailout, Center, rot, material);
   fr->SetRecursionProperties(max_iteration, num_subdivisions, min_distance);
 
   for (auto a : CombinedActions)
@@ -346,8 +349,6 @@ float Fractal::DE_Sphere(Eigen::Vector3f p)
   return floored.norm() - Scale;
 }
 
-const float bailout_dist = 1000;
-
 
 float Fractal::DE_Generic(Eigen::Vector3f _z)
 {
@@ -356,7 +357,7 @@ float Fractal::DE_Generic(Eigen::Vector3f _z)
   float r = z.squaredNorm();
   int subdiv;
   bool skip = false;
-  for (subdiv = 0; subdiv < num_subdivisions && r < bailout_dist; subdiv++)
+  for (subdiv = 0; subdiv < num_subdivisions && r < Bailout; subdiv++)
   {
     for (size_t action_num = 0; action_num < CombinedActions.size(); action_num++)
     {
@@ -405,7 +406,7 @@ Eigen::Vector3f Fractal::FoldBased(Eigen::Vector3f _z)
   float r = z.squaredNorm();
   int subdiv = 0;
   float w = 1;
-  for (subdiv = 0; subdiv < num_subdivisions && r < bailout_dist; subdiv++)
+  for (subdiv = 0; subdiv < num_subdivisions && r < Bailout; subdiv++)
   {
     for (size_t action_num = 0; action_num < CombinedActions.size(); action_num++)
     {
