@@ -49,7 +49,17 @@ public:
     NUM_MODES
   };
 
+  enum SHADOW_MODE
+  {
+    NONE,
+    HARD,
+    SOFT,
+    NUM_SHADOW_MODES
+  };
+  float ambientIntensity = 0.1f;
+
   TRACE_MODE DefaultMode = TRACE_MODE::SIMPLE;
+  SHADOW_MODE DefaultShadowMode = SHADOW_MODE::HARD;
 
   Tracer();
   void Finit();
@@ -76,7 +86,7 @@ public:
 
   // tracer support functions
   Color BVHTracePath(Ray &r, Minimizer &minimizer, bool option);
-  Color BVHTraceDebug(Ray &r, Minimizer &minimizer, TRACE_MODE m);
+  Color BVHTraceDebug(Ray &r, Minimizer &minimizer, TRACE_MODE m, SHADOW_MODE sm);
   void SampleLight(Intersection &I);
   Eigen::Vector3f GetBeers(const float t, Eigen::Vector3f Kt);
   Eigen::Vector3f EvalScattering(Eigen::Vector3f &w_o, Eigen::Vector3f &N, Eigen::Vector3f &w_i, Intersection &s);

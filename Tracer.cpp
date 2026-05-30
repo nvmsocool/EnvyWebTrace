@@ -207,7 +207,7 @@ float Tracer::TraceImage(ImageData &id, bool update_pass, int n_threads)
     if (DefaultMode == Tracer::TRACE_MODE::FULL)
       id.data[pos] = (1 - weight) * old + weight * BVHTracePath(r, minimizer, false);
     else
-      id.data[pos] = (1 - weight) * old + weight * BVHTraceDebug(r, minimizer, DefaultMode);
+      id.data[pos] = (1 - weight) * old + weight * BVHTraceDebug(r, minimizer, DefaultMode, DefaultShadowMode);
 
     if (update_pass)
       id.diff += std::abs(old.x() - id.data[pos].x()) + std::abs(old.y() - id.data[pos].y()) + std::abs(old.z() - id.data[pos].z());
@@ -398,7 +398,7 @@ void Tracer::SetRayHalfDome(ImageData &id, Ray &r, int x, int y)
   r.direction = camera.rotation._transformVector(Eigen::Vector3f(x_d, y_d, z_d)).normalized();
 }
 
-Color Tracer::BVHTraceDebug(Ray &r, Minimizer &minimizer, TRACE_MODE mode)
+Color Tracer::BVHTraceDebug(Ray &r, Minimizer &minimizer, TRACE_MODE mode, SHADOW_MODE sm)
 {
   Eigen::Vector3f color(0.001f, 0.001f, 0.001f);
   minimizer.closest_int.Reset();
@@ -413,10 +413,43 @@ Color Tracer::BVHTraceDebug(Ray &r, Minimizer &minimizer, TRACE_MODE mode)
       {
 
         Eigen::Vector3f w_o = -r.direction;
-        Intersection &i = minimizer.closest_int;
-        Eigen::Vector3f w_i = (l->Position - i.P).normalized();
+        Intersection i = minimizer.closest_int;
 
-        color += static_cast<Light *>(l->material)->light_value.cwiseProduct(EvalScattering(w_o, i.N, w_i, i));
+        if (sm == SHADOW_MODE::SOFT)
+        {
+          Intersection L;
+          SampleLight(L);
+          Eigen::Vector3f w_i = (L.P - i.P).normalized();
+          r.origin = i.P;
+
+          Intersection &I = FireRayIntoScene(minimizer, w_i);
+          float mult = ambientIntensity;
+          if (I.object == l)
+          {
+            mult = 1;
+          }
+          color += mult * static_cast<Light *>(l->material)->light_value.cwiseProduct(EvalScattering(w_o, i.N, w_i, i));
+        }
+        else
+        {
+          Eigen::Vector3f w_i = (l->Position - i.P).normalized();
+          if (sm == SHADOW_MODE::NONE)
+          {
+            color += static_cast<Light *>(l->material)->light_value.cwiseProduct(EvalScattering(w_o, i.N, w_i, i));
+          }
+          else
+          {
+            r.origin = i.P;
+            Intersection &I = FireRayIntoScene(minimizer, w_i);
+            float mult = ambientIntensity;
+            if (I.object == l)
+            {
+              mult = 1;
+            }
+            color += mult * static_cast<Light *>(l->material)->light_value.cwiseProduct(EvalScattering(w_o, i.N, w_i, i));
+          }
+        }
+        
       }
     }
     else if (mode == TRACE_MODE::NORMAL)

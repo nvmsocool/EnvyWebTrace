@@ -40,7 +40,7 @@ bool shouldReset = false;
 bool uiResized = false;
 bool isEnteringText = false;
 std::string sceneName;
-int tracer_mode;
+int tracer_mode, tracer_shadow_mode;
 
 // fps vars
 float guiFPS = 0;
@@ -94,20 +94,20 @@ static std::map<std::string, std::string> presets =
 {
   { "Tentacle",
 R"(screen 800 600
-camera -0.991188 0.446009 -0.111544 0.650000 48.023769 -169.326431 150.757751 0.002000 0.212000
-light 5.000000 5.000000 5.000000
-sphere 3.500000 -2.500000 0.500000 1.500000
-brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000
-fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 2.0 1000 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000
-brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
-box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000
-box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000
-brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
-box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000
-box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000
-brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000
-box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000
-box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000)"
+camera -0.699261 -0.530514 0.554115 0.650000 47.339504 28.859642 41.137787 0.002000 0.400000
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 
+box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box -10.000000 -10.000000 -1.500000 20.000000 20.000000 0.100000 
+box -10.000000 -10.000000 1.500000 20.000000 20.000000 0.100000 
+brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 
+box 8.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+box -3.000000 -10.000000 -10.000000 0.100000 20.000000 20.000000 
+brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 
+fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 20.100000 100 11 0.000100 2.000000 1000.000000 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 
+light 5.000000 5.000000 5.000000 
+sphere 3.500000 -2.500000 0.500000 1.500000 )"
   },
   { "Menger",
 R"(screen 800 600
@@ -214,6 +214,7 @@ void ReloadScene(std::string s)
   tracer->Finit();
   ResizeImages();
   tracer_mode = tracer->DefaultMode;
+  tracer_shadow_mode = tracer->DefaultShadowMode;
   ResetTrace();
 }
 
@@ -302,8 +303,8 @@ void DrawGUI()
       }
       if (tracer->camera.controlsEnabled)
       {
-      if (tracer->camera.UpdateMouse())
-        ResetTrace();
+        if (tracer->camera.UpdateMouse())
+          ResetTrace();
       }
   }
   ImGui::End();
@@ -370,6 +371,27 @@ void DrawGUI()
     }
     if (tooltips && ImGui::IsItemHovered()) 
         ImGui::SetTooltip("Render technique used for image");
+    if (tracer_mode == Tracer::TRACE_MODE::SIMPLE)
+    {
+      const char *shadowTypes[] = {
+        "NONE",
+        "HARD",
+        "SOFT",
+      };
+      if (ImGui::Combo("shadow_type", &tracer_shadow_mode, shadowTypes, 3, 4))
+      {
+        image.nPathsPerTrace = 1;
+        preview.nPathsPerTrace = 1;
+        ResetTrace();
+      }
+      if (tracer_shadow_mode != Tracer::SHADOW_MODE::NONE)
+      {
+        if (ImGui::SliderFloat("ambientIntensity", &tracer->ambientIntensity, 0.f, 1.f))
+        {
+          ResetTrace();
+        }
+      }
+    }
     ImGui::SliderInt("guiFPS", &maxFPS, 1, 120);
     if (tooltips && ImGui::IsItemHovered()) 
         ImGui::SetTooltip("Target FPS of the GUI");
@@ -566,6 +588,7 @@ void MainTrace()
 
     //this has to happen here due to the potentially different trace times that modes can result in
     tracer->DefaultMode = static_cast<Tracer::TRACE_MODE>(tracer_mode);
+    tracer->DefaultShadowMode = static_cast<Tracer::SHADOW_MODE>(tracer_shadow_mode);
 
     // starting render, disable inputs
     if (tracer->DefaultMode == Tracer::TRACE_MODE::FULL)
@@ -696,6 +719,7 @@ int init()
   ResizeImages();
 
   tracer_mode = tracer->DefaultMode;
+  tracer_shadow_mode = tracer->DefaultShadowMode;
   
   userSceneText.reserve(4096);
   
