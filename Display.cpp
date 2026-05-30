@@ -17,32 +17,14 @@ void ReshapeFunc(GLFWwindow *win, int w, int h)
   globalDisplay->ReshapeWindow(w, h);
 }
 
-void MoveFunc(GLFWwindow *win, double _x, double _y)
-{
-  globalDisplay->real_mouse_x = (int)_x;
-  globalDisplay->real_mouse_y = (int)_y;
-  globalDisplay->mouse_x = (int)((float)globalDisplay->render_width * (float)(globalDisplay->real_mouse_x - globalDisplay->left_i) / (float)(globalDisplay->right_i - globalDisplay->left_i));
-  globalDisplay->mouse_y = (int)((float)globalDisplay->render_height * (float)(globalDisplay->real_mouse_y - globalDisplay->top_i) / (float)(globalDisplay->bottom_i - globalDisplay->top_i));
-  globalDisplay->mouse_x = std::max(0, std::min(globalDisplay->mouse_x, globalDisplay->render_width));
-  globalDisplay->mouse_y = std::max(0, std::min(globalDisplay->mouse_y, globalDisplay->render_height));
-}
-
 void CloseFunc(GLFWwindow *window)
 {
   globalDisplay->closed = true;
-
-  
 }
 
 void ActiveFunc(GLFWwindow *window, int focused)
 {
   globalDisplay->active = (bool)focused;
-}
-
-void ClickFunc(GLFWwindow *window, int button, int action, int mods)
-{
-  if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
-    globalDisplay->clickRequest = true;
 }
 
 // class functions
@@ -132,20 +114,8 @@ void Display::SetRenderSize(ImageData &id)
 // Called when the window size is changed.
 void Display::ReshapeWindow(int w, int h)
 {
-  // clear everything
-  int display_w, display_h;
-  //glfwGetFramebufferSize(window, &display_w, &display_h);
-  //glViewport(0, 0, display_w, display_h);
-  //glClearColor(0,0,0,0);
-  //glClear(GL_COLOR_BUFFER_BIT);
-
-  //glfwSwapBuffers(window);
-
-  //reset view
   window_width = w;
   window_height = h;
-  //if (w && h)
-  //  glViewport(0, 0, w, h);
 
   CalcImageViewport();
 }
@@ -226,8 +196,6 @@ void Display::SetupWindow(int _w, int h)
   glfwSetWindowFocusCallback(window, ActiveFunc);
   glfwSetWindowSizeCallback(window, ReshapeFunc);
   glfwSetWindowCloseCallback(window, CloseFunc);
-  glfwSetCursorPosCallback(window, MoveFunc);
-  glfwSetMouseButtonCallback(window, ClickFunc);
   
   
 

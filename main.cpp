@@ -193,15 +193,30 @@ void DrawGUI()
     ImGui::SetCursorPos(ImVec2((float)(display->window_width-display->gui_width-w) * 0.5f, (float)(display->window_height-image.h) * 0.5f));
   }
 
+
   ImGui::Image(
       (ImTextureID)(intptr_t)display->textureID,
       displaySize,
       ImVec2(0, 0),
       end
   );
+  
+  ImVec2 imagePos = ImGui::GetItemRectMin();
+  ImVec2 imageEnd = ImGui::GetItemRectMax();
+  ImVec2 mousePos = ImGui::GetMousePos();
+
+  float localX = std::min((float)image.w, std::max(0.f, (mousePos.x - imagePos.x) * (float)image.w / (imageEnd.x - imagePos.x)));
+  float localY = (float)image.h -  std::min((float)image.h, std::max(0.f, (mousePos.y - imagePos.y) * (float)image.h / (imageEnd.y - imagePos.y)));
+
   if (ImGui::IsItemHovered() && display->active && tracer->camera.controlsEnabled)
   {
-      tracer->SinglePixelInfoTrace(image, display->mouse_x, display->mouse_y);
+
+      tracer->SinglePixelInfoTrace(image, localX, localY);
+      if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+      {
+        singleTrace = tracer->SinglePixelDebugTrace(image, localX, localY);
+      }
+
       if (tracer->camera.UpdateMouse())
         ResetTrace();
   }
@@ -222,14 +237,17 @@ void DrawGUI()
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
     if (tooltips && ImGui::IsItemHovered()) 
         ImGui::SetTooltip("how many paths are traced each GUI update.");
-  //if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
-  //{
-  //  ImGui::Text("pos: (%d,%d)", display->mouse_x, display->mouse_y);
-  //  ImGui::Text("object: %s", tracer->info_name.data());
-  //  ImGui::Text("distance: %.4f", tracer->info_dist);
-  //  ImGui::Text("position: (%.2f, %.2f, %.2f)", tracer->info_pos[0], tracer->info_pos[1], tracer->info_pos[2]);
-  //  ImGui::Text(singleTrace.data());
-  //}
+  if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
+  {
+    ImGui::Text("pos: (%d,%d)", (int)localX, (int)localY);
+    ImGui::Text("object: %s", tracer->info_name.data());
+    ImGui::Text("distance: %.4f", tracer->info_dist);
+    ImGui::Text("position: (%.2f, %.2f, %.2f)", tracer->info_pos[0], tracer->info_pos[1], tracer->info_pos[2]);
+    if (ImGui::CollapsingHeader("debug trace"))
+    {
+      ImGui::Text(singleTrace.data());
+    }
+  }
 
   ImGui::BeginChild("settings");
 
@@ -471,13 +489,6 @@ void loop()
   }
 
   display->UpdateEvent();
-
-  if (display->clickRequest)
-  {
-    if (display->real_mouse_x < display->window_width - display->gui_width)
-      singleTrace = tracer->SinglePixelDebugTrace(image, display->mouse_x, display->mouse_y);
-    display->clickRequest = false;
-  }
 
   if (display->active && !isEnteringText && tracer->camera.controlsEnabled)
   {

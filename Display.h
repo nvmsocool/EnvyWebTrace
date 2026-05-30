@@ -17,10 +17,8 @@ public:
   int gui_width{ 350 };
   float top, bottom, left, right;
   int top_i, bottom_i, left_i, right_i;
-  int mouse_x, mouse_y, real_mouse_x, real_mouse_y;
   bool closed{ true};
   bool active{ false };
-  bool clickRequest{ false };
 
   void DrawArray(ImageData& id);
   void FinishDrawing();
