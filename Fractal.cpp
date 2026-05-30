@@ -91,6 +91,7 @@ bool Fractal::RenderGUI(size_t n)
     this->Position = Center;
   }
   something_changed |= ImGui::DragFloat((std::string("scale##") + std::to_string(n)).data(), &Scale, 0.001f, 0, 100000, "%.3f");
+  something_changed |= ImGui::DragFloat((std::string("itsub##") + std::to_string(n)).data(), &ItSub, 0.001f, 0, 100000, "%.3f");
   if (ImGui::DragFloat3((std::string("rotation##") + std::to_string(n)).data(), &rot_eulers[0], 0.1f, -180, 180, "%.1f"))
   {
     something_changed = true;
@@ -295,26 +296,9 @@ std::string Fractal::Serialize()
   return ret;
 }
 
-/*
-*   Fractal(float _Scale, Eigen::Vector3f _Center, Eigen::Quaternionf _rot, Material *m)
-  {
-    this->name = "Fractal";
-    this->material = m;
-    Scale = _Scale;
-    Center = _Center;
-    this->BoundingBox = Eigen::AlignedBox<float, 3>(
-        -Eigen::Vector3f::Ones() * 1000,
-        Eigen::Vector3f::Ones() * 1000);
-    this->Position = Center;
-    rot_eulers = QuatToEuler(_rot);
-    rot = _rot;
-    rot_inv = rot.inverse();
-* 
-* */
-
 Shape *Fractal::Clone()
 {
-  Fractal *fr = new Fractal(Scale, Center, rot, material);
+  Fractal *fr = new Fractal(Scale, ItSub, Center, rot, material);
   fr->SetRecursionProperties(max_iteration, num_subdivisions, min_distance);
 
   for (auto a : CombinedActions)
@@ -370,11 +354,11 @@ float Fractal::DE_Generic(Eigen::Vector3f _z)
   Eigen::Vector3f z = rot_inv._transformVector(_z - Center);
 
   float r = z.squaredNorm();
-  int trace_num;
+  int subdiv;
   bool skip = false;
-  for (trace_num = 0; trace_num < num_subdivisions && r < bailout_dist; trace_num++)
+  for (subdiv = 0; subdiv < num_subdivisions && r < bailout_dist; subdiv++)
   {
-    for (size_t i = 0; i < CombinedActions.size(); i++)
+    for (size_t action_num = 0; action_num < CombinedActions.size(); action_num++)
     {
       if (skip)
       {
@@ -382,28 +366,28 @@ float Fractal::DE_Generic(Eigen::Vector3f _z)
         continue;
       }
 
-      switch (CombinedActions[i].action_type)
+      switch (CombinedActions[action_num].action_type)
       {
       case ACTION_TYPE::FOLD: // fold
-        Action_Fold(z, i);
+        Action_Fold(z, action_num);
         break;
       case ACTION_TYPE::ROTATION: //rotation
-        Action_Rotate(z, i);
+        Action_Rotate(z, action_num);
         break;
       case ACTION_TYPE::SCALE: //scale
-        Action_Scale(z, i);
+        Action_Scale(z, action_num);
         break;
       case ACTION_TYPE::TRANSLATE: //translation
-        Action_Translate(z, i);
+        Action_Translate(z, action_num);
         break;
-      case ACTION_TYPE::MODULO: //translation
-        Action_Modulo(z, i);
+      case ACTION_TYPE::MODULO: //modulo
+        Action_Modulo(z, action_num);
         break;
-      case ACTION_TYPE::POWER: //translation
-        Action_Power(z, i);
+      case ACTION_TYPE::POWER: //power
+        Action_Power(z, action_num);
         break;
       case ACTION_TYPE::C_ITERATION:
-        skip = CombinedActions[i].IntOp < 1 || trace_num > CombinedActions[i].IntOp;
+        skip = CombinedActions[action_num].IntOp < 1 || subdiv > CombinedActions[action_num].IntOp;
         break;
       }
     }
@@ -411,7 +395,7 @@ float Fractal::DE_Generic(Eigen::Vector3f _z)
     r = z.squaredNorm();
   }
 
-  return (std::sqrt(r) - 2.f) * (float)std::pow(Scale, -trace_num);
+  return (std::sqrt(r) - ItSub) * (float)std::pow(Scale, -subdiv);
 }
 
 Eigen::Vector3f Fractal::FoldBased(Eigen::Vector3f _z)
@@ -419,9 +403,9 @@ Eigen::Vector3f Fractal::FoldBased(Eigen::Vector3f _z)
   Eigen::Vector3f c(1.0, 1.0, 1.0);
   Eigen::Vector3f z = rot_inv._transformVector(_z) - Center;
   float r = z.squaredNorm();
-  int i = 0;
+  int subdiv = 0;
   float w = 1;
-  for (i = 0; i < num_subdivisions && r < bailout_dist; i++)
+  for (subdiv = 0; subdiv < num_subdivisions && r < bailout_dist; subdiv++)
   {
     for (size_t action_num = 0; action_num < CombinedActions.size(); action_num++)
     {

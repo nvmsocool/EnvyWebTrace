@@ -87,6 +87,11 @@ void ResizeImages()
   ResizePreview();
 }
 
+static std::vector<std::string> presets = 
+{
+  {},
+};
+
 // Read a scene file by parsing each line as a command and calling
 // scene->Command(...) with the results.
 void ReadScene()
@@ -98,7 +103,7 @@ void ReadScene()
     "light 5.000000 5.000000 5.000000 ",
     "sphere 3.500000 -2.500000 0.500000 1.500000 ",
     "brdf 0.600000 0.600000 0.600000 0.600000 0.600000 0.600000 0.000000 ",
-    "fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 ",
+    "fractal 0.000000 0.000000 0.000000 2.000000 -0.000000 0.000000 -0.000000 100 11 0.000100 2.0 0 1.000000 -0.500000 0.000000 0 0.000000 1.000000 -0.500000 0 -0.500000 0.000000 1.000000 2 2.000000 2.000000 2.000000 3 -1.000000 -1.000000 -1.000000 ",
     "brdf 0.600000 0.600000 0.600000 0.030000 0.030000 0.030000 0.000000 ",
     "box -10.000000 4.000000 -10.000000 20.000000 0.100000 20.000000 ",
     "box -10.000000 -8.000000 -10.000000 20.000000 0.100000 20.000000 ",
@@ -232,11 +237,11 @@ void DrawGUI()
   ImGui::Text("GUI (%.1f FPS)", guiFPS);
   ImGui::ProgressBar(image.pctComplete, ImVec2(-1, 0), (std::string("Frame ") + std::to_string(image.trace_num)).data());
   ImGui::Text("%.3fs/trace, conv=%.4f", image.traceDuration, image.cachedDiff);
-    if (tooltips && ImGui::IsItemHovered()) 
-        ImGui::SetTooltip("how long each trace takes, and how close it is to converging.");
+  if (tooltips && ImGui::IsItemHovered()) 
+      ImGui::SetTooltip("how long each trace takes, and how close it is to converging.");
   ImGui::Text("Trace/Frame: %d", image.nPathsPerTrace);
-    if (tooltips && ImGui::IsItemHovered()) 
-        ImGui::SetTooltip("how many paths are traced each GUI update.");
+  if (tooltips && ImGui::IsItemHovered()) 
+      ImGui::SetTooltip("how many paths are traced each GUI update.");
   if (ImGui::CollapsingHeader("under mouse", ImGuiTreeNodeFlags_DefaultOpen))
   {
     ImGui::Text("pos: (%d,%d)", (int)localX, (int)localY);

@@ -8,11 +8,12 @@ class Fractal : public Shape
 {
 public:
   Fractal(){};
-  Fractal(float _Scale, Eigen::Vector3f _Center, Eigen::Quaternionf _rot, Material *m)
+  Fractal(float _Scale, float _ItSub, Eigen::Vector3f _Center, Eigen::Quaternionf _rot, Material *m)
   {
     this->name = "Fractal";
     this->material = m;
     Scale = _Scale;
+    ItSub = _ItSub;
     Center = _Center;
     this->BoundingBox = Eigen::AlignedBox<float, 3>(
         -Eigen::Vector3f::Ones() * 1000,
@@ -40,7 +41,7 @@ public:
   float min_distance{ 0.001f };
   int num_subdivisions{ 11 };
 
-  float Scale;
+  float Scale, ItSub;
   Eigen::Vector3f Center, rot_eulers;
   Eigen::Quaternionf rot, rot_inv;
   bool flat_color = false;
