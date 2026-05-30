@@ -176,7 +176,7 @@ void DrawGUI()
     if (imageAspect > containerAspect)
     {
         scaledWidth = containerWidth;
-        scaledHeight = (float)display->window_width / imageAspect;
+        scaledHeight = containerWidth / imageAspect;
     }
     else
     {
