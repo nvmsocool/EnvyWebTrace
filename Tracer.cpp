@@ -738,7 +738,7 @@ Eigen::Vector3f Tracer::EvalScattering(Eigen::Vector3f &w_o, Eigen::Vector3f &N,
   Eigen::Vector3f diffuse = color / pi;
   Eigen::Vector3f half = (w_o + w_i).normalized();
 
-  float N_w_i = std::abs(N.dot(w_i));
+  float N_w_i = std::max(0.f,N.dot(w_i));
   Material *m = i.object->material;
   float denom = (4 * std::abs(w_i.dot(N)) * std::abs(w_o.dot(N)));
   Eigen::Vector3f ret;
