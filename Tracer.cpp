@@ -127,10 +127,10 @@ void Tracer::Command(const std::vector<std::string> &strings,
     // syntax: fractal x y z   s
     // Creates a Fractal instance for a fractal defined by at x,y,z with scale s
     Eigen::Quaternionf rot = EulerToQuat(Eigen::Vector3f(f[5], f[6], f[7]));
-    Fractal *fr = new Fractal(f[4], Eigen::Vector3f(f[1], f[2], f[3]), rot, currentMat);
+    Fractal *fr = new Fractal(f[4], f[11],  Eigen::Vector3f(f[1], f[2], f[3]), rot, currentMat);
     fr->SetRecursionProperties((int)f[8], (int)f[9], f[10]);
 
-    size_t current_index = 11;
+    size_t current_index = 12;
     while (current_index < f.size())
     {
 
